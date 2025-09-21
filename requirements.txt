@@ -1,0 +1,31 @@
+# --- Web API & helpers -------------------------------------------------
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0        # ASGI server
+
+# --- Database layer (SQLite) ------------------------------------------
+sqlalchemy>=2.0.25               # ORM
+databases>=0.8.0                 # Async helper for FastAPI (optional)
+
+# --- Config / I/O ------------------------------------------------------
+python-dotenv>=1.0.0             # .env parsing
+pydantic>=2.0.0                  # request / response models (updated for compatibility)
+requests>=2.31.0                 # OpenAlex & other HTTP calls
+
+# --- Machine-learning core --------------------------------------------
+scikit-learn>=1.4.0              # TF-IDF, similarity, classical ML (updated version with better Python 3.13 support)
+sentence-transformers>=2.3.0     # Thin wrapper around transformers + torch
+torch>=2.1.0                     # backend for Sentence-Transformers
+transformers>=4.35.0             # BERT family models
+
+# --- NLP preprocessing -------------------------------------------------
+spacy>=3.7.0
+nltk>=3.8.1
+
+# --- Data wrangling ----------------------------------------------------
+pandas>=2.1.0
+numpy>=1.25.0
+
+# --- Dev / test / CLI --------------------------------------------------
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+click>=8.1.6
