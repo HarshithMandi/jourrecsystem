@@ -57,7 +57,8 @@ def rank_journals(abstract: str, top_k: int = settings.TOP_K):
             
             sim_tfidf = cosine_sim(vec_tfidf, v_tfidf)
             sim_bert = cosine_sim(vec_bert, v_bert)
-            sim = 0.5 * sim_tfidf + 0.5 * sim_bert
+            # Weighted combination: 30% TF-IDF + 70% BERT for better semantic matching
+            sim = 0.3 * sim_tfidf + 0.7 * sim_bert
             
             sims.append((j, sim))
         except (json.JSONDecodeError, ValueError, ZeroDivisionError) as e:
