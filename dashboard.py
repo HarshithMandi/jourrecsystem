@@ -179,11 +179,33 @@ def main():
         border-bottom: 1px solid #e9ecef;
     }
     .metric-card {
-        background: white;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
         padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #1f77b4;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-left: 5px solid #1f77b4;
+        color: #333333;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        margin-bottom: 1rem;
+    }
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    .metric-card h3 {
+        color: #1f77b4;
+        margin: 0 0 0.5rem 0;
+        font-size: 2.2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .metric-card p {
+        color: #555555;
+        margin: 0;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 500;
     }
     </style>
     """, unsafe_allow_html=True)
