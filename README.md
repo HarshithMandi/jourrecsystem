@@ -1,22 +1,50 @@
-# Journal Recommender API 🚀
+# Journal Recommender System
 
-A machine learning-powered REST API that recommends academic journals based on research abstracts using hybrid TF-IDF and BERT embeddings.
+A comprehensive machine learning-powered system that recommends academic journals based on research abstracts using hybrid TF-IDF and BERT embeddings. Features both a REST API and an interactive Streamlit dashboard.
 
-## Quick Start
+## Quick Start Options
 
-### 🎯 One-Command Launch
+### Option 1: Dashboard + API (Recommended)
+```bash
+python launch_dashboard.py
+```
+This launches both the API server and interactive web dashboard.
+
+### Option 2: API Only
 ```bash
 python launch_api.py
 ```
 This will automatically:
-- ✅ Install dependencies  
-- 🗃️ Initialize database
-- 📡 Ingest journal data
-- 🧠 Build ML vectors
-- 🚀 Start API server
-- 📊 Run tests
+- Install dependencies  
+- Initialize database
+- Ingest journal data
+- Build ML vectors
+- Start API server
+- Run tests
 
-### 🌐 API Endpoints
+## Interactive Dashboard
+
+The Streamlit dashboard provides a user-friendly interface with:
+
+- **Single Recommendations**: Get journal suggestions for individual abstracts
+- **Batch Analysis**: Process multiple abstracts simultaneously  
+- **Analytics**: Database statistics and performance metrics
+- **Export Features**: Download results as CSV files
+- **Visual Analytics**: Interactive charts and graphs
+
+### Dashboard Features:
+- Real-time journal recommendations
+- Similarity score visualization
+- Batch processing with file upload
+- Performance monitoring
+- Comprehensive export options
+
+### Access the Dashboard:
+- **URL**: http://localhost:8501
+- **Launch**: `streamlit run dashboard.py`
+- **Auto-Launch**: `python launch_dashboard.py`
+
+## API Endpoints
 
 Once running, the API will be available at `http://localhost:8000`
 
@@ -28,7 +56,7 @@ Once running, the API will be available at `http://localhost:8000`
 | `/api/batch-recommend` | POST | Batch recommendations |
 | `/api/stats` | GET | Database statistics |
 
-## 📡 API Usage Examples
+## API Usage Examples
 
 ### Single Recommendation
 ```python
@@ -65,7 +93,7 @@ curl -X POST "http://localhost:8000/api/recommend" \
      }'
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Run API Tests
 ```bash
@@ -80,7 +108,7 @@ python example_usage.py
 ### Manual Testing
 Visit `http://localhost:8000/docs` for interactive API testing interface.
 
-## 📊 API Response Format
+## API Response Format
 
 ### Recommendation Response
 ```json
@@ -109,7 +137,7 @@ Visit `http://localhost:8000/docs` for interactive API testing interface.
 }
 ```
 
-## 🔧 Manual Setup
+## Manual Setup
 
 If you prefer step-by-step setup:
 
@@ -130,7 +158,7 @@ python scripts/build_vectors.py
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── app/
@@ -149,7 +177,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 └── example_usage.py       # Usage examples
 ```
 
-## 🧠 How It Works
+## How It Works
 
 1. **Data Ingestion**: Fetches journal data from OpenAlex API
 2. **ML Processing**: Builds TF-IDF and BERT embeddings for each journal
@@ -157,7 +185,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 4. **Similarity Matching**: Computes cosine similarity with journal profiles
 5. **Ranking**: Returns top-K most similar journals with scores
 
-## 🔍 Features
+## Features
 
 - **Hybrid ML**: Combines TF-IDF and BERT embeddings
 - **Fast API**: Sub-second response times  
@@ -167,14 +195,14 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 - **Statistics**: Database and performance metrics
 - **CORS Enabled**: Ready for web frontend integration
 
-## 📈 Performance
+## Performance
 
 - **Response Time**: < 50ms for single recommendations
 - **Batch Processing**: ~100ms per abstract in batch
 - **Database**: 200+ journals with full ML profiles
 - **Accuracy**: Validated against domain expert ratings
 
-## 🛠️ Development
+## Development
 
 ### Run Tests
 ```bash
@@ -196,7 +224,7 @@ flake8 app/
 3. Create API endpoints in `app/api/routes.py`
 4. Add tests in `tests/`
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create feature branch
@@ -204,10 +232,10 @@ flake8 app/
 4. Ensure all tests pass
 5. Submit pull request
 
-## 📄 License
+## License
 
 MIT License - see LICENSE file for details.
 
 ---
 
-🎯 **Ready to find the perfect journal for your research? Start with `python launch_api.py`!**
+**Ready to find the perfect journal for your research? Start with `python launch_api.py`!**

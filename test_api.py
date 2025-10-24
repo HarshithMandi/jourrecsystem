@@ -12,24 +12,24 @@ BASE_URL = "http://localhost:8000"
 
 def test_health_endpoint():
     """Test the health check endpoint"""
-    print("🔍 Testing health endpoint...")
+    print("Testing health endpoint...")
     try:
         response = requests.get(f"{BASE_URL}/ping")
         if response.status_code == 200:
             data = response.json()
-            print(f"✅ Health check passed: {data['status']}")
+            print(f"✓ Health check passed: {data['status']}")
             print(f"   Database: {data.get('database', 'N/A')}")
             return True
         else:
-            print(f"❌ Health check failed: {response.status_code}")
+            print(f"✗ Health check failed: {response.status_code}")
             return False
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Health check error: {e}")
+    except requests.RequestException as e:
+        print(f"✗ Health check error: {e}")
         return False
 
 def test_recommendation_endpoint():
-    """Test the main recommendation endpoint"""
-    print("\n🔍 Testing recommendation endpoint...")
+    """Test the recommendation endpoint"""
+    print("\nTesting recommendation endpoint...")
     
     # Sample research abstract
     test_abstract = """

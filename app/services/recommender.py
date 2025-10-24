@@ -53,12 +53,20 @@ def rank_journals(abstract: str, top_k: int = settings.TOP_K):
             
             # Calculate similarities using numpy dot product (normalized)
             def cosine_sim(a, b):
-                return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+                norm_a = np.linalg.norm(a)
+                norm_b = np.linalg.norm(b)
+                if norm_a == 0 or norm_b == 0:
+                    return 0.0  # Return 0 similarity for zero vectors
+                return np.dot(a, b) / (norm_a * norm_b)
             
             sim_tfidf = cosine_sim(vec_tfidf, v_tfidf)
             sim_bert = cosine_sim(vec_bert, v_bert)
             # Weighted combination: 30% TF-IDF + 70% BERT for better semantic matching
             sim = 0.3 * sim_tfidf + 0.7 * sim_bert
+            
+            # Ensure similarity is a valid number
+            if np.isnan(sim) or np.isinf(sim):
+                sim = 0.0
             
             sims.append((j, sim))
         except (json.JSONDecodeError, ValueError, ZeroDivisionError) as e:
@@ -70,12 +78,23 @@ def rank_journals(abstract: str, top_k: int = settings.TOP_K):
 
     # audit trail
     q = QueryRun(query_text=abstract, model_used="ensemble")
-    db.add(q); db.commit()
-
-    for rank, (j, score) in enumerate(ranked, 1):
-        db.add(Recommendation(query_id=q.id, journal_id=j.id,
-                              similarity=score, rank=rank))
-    db.commit()
+    db.add(q)
+    
+    try:
+        db.commit()
+        
+        for rank, (j, score) in enumerate(ranked, 1):
+            # Ensure score is a valid float before inserting
+            if np.isnan(score) or np.isinf(score):
+                score = 0.0
+            db.add(Recommendation(query_id=q.id, journal_id=j.id,
+                                  similarity=float(score), rank=rank))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Database error: {e}")
+        # Continue with results even if audit fails
+        pass
 
     results = [{"journal": j.name, "similarity": round(score,3)} 
                for j,score in ranked]

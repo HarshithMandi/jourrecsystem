@@ -63,7 +63,7 @@ SAMPLE_ABSTRACTS = {
 
 def test_single_recommendation(abstract, field_name, top_k=5):
     """Test single recommendation endpoint"""
-    print(f"\n🔬 Testing {field_name} abstract...")
+    print(f"\nTesting {field_name} abstract...")
     
     payload = {
         "abstract": abstract.strip(),
@@ -77,27 +77,27 @@ def test_single_recommendation(abstract, field_name, top_k=5):
         
         if response.status_code == 200:
             data = response.json()
-            print(f"✅ Success! ({response_time:.0f}ms client time)")
+            print(f"✓ Success! ({response_time:.0f}ms client time)")
             print(f"   Server processing: {data['processing_time_ms']}ms")
             print(f"   Query ID: {data['query_id']}")
             print(f"   Found {len(data['recommendations'])} recommendations")
             
-            print(f"\n📋 Top {min(3, len(data['recommendations']))} journals for {field_name}:")
+            print(f"\nTop {min(3, len(data['recommendations']))} journals for {field_name}:")
             for rec in data['recommendations'][:3]:
                 print(f"   {rec['rank']}. {rec['journal_name']}")
                 print(f"      Similarity: {rec['similarity_score']:.4f}")
             
             return data
         else:
-            print(f"❌ Request failed: {response.status_code}")
+            print(f"✗ Request failed: {response.status_code}")
             print(f"   Error: {response.text}")
             return None
             
     except requests.exceptions.Timeout:
-        print("⏰ Request timed out")
+        print("Request timed out")
         return None
     except requests.exceptions.RequestException as e:
-        print(f"❌ Request error: {e}")
+        print(f"✗ Request error: {e}")
         return None
 
 def test_batch_recommendation():
@@ -119,13 +119,13 @@ def test_batch_recommendation():
         
         if response.status_code == 200:
             data = response.json()
-            print(f"✅ Batch request successful! ({response_time:.0f}ms total)")
+            print(f"✓ Batch request successful! ({response_time:.0f}ms total)")
             print(f"   Server processing: {data['total_processing_time_ms']}ms")
             print(f"   Processed {len(data['results'])} abstracts")
             
             for i, result in enumerate(data['results']):
                 field_name = list(SAMPLE_ABSTRACTS.keys())[i]
-                print(f"\n   📊 {field_name.replace('_', ' ').title()}:")
+                print(f"\n   {field_name.replace('_', ' ').title()}:")
                 if result['recommendations']:
                     top_rec = result['recommendations'][0]
                     print(f"      Top journal: {top_rec['journal_name']}")
@@ -135,76 +135,76 @@ def test_batch_recommendation():
             
             return data
         else:
-            print(f"❌ Batch request failed: {response.status_code}")
+            print(f"✗ Batch request failed: {response.status_code}")
             print(f"   Error: {response.text}")
             return None
             
     except requests.exceptions.Timeout:
-        print("⏰ Batch request timed out")
+        print("Batch request timed out")
         return None
     except requests.exceptions.RequestException as e:
-        print(f"❌ Batch request error: {e}")
+        print(f"✗ Batch request error: {e}")
         return None
 
 def test_stats_endpoint():
     """Test database statistics endpoint"""
-    print("\n📊 Testing statistics endpoint...")
+    print("\nTesting statistics endpoint...")
     
     try:
         response = requests.get(f"{API_BASE_URL}/api/stats", timeout=10)
         
         if response.status_code == 200:
             data = response.json()
-            print("✅ Statistics retrieved successfully!")
-            print(f"   📚 Total journals: {data['total_journals']}")
-            print(f"   🔍 Total queries: {data['total_queries']}")
-            print(f"   📈 Total recommendations: {data['total_recommendations']}")
-            print(f"   🧠 Journals with ML profiles: {data['journals_with_profiles']}")
+            print("✓ Statistics retrieved successfully!")
+            print(f"   Total journals: {data['total_journals']}")
+            print(f"   Total queries: {data['total_queries']}")
+            print(f"   Total recommendations: {data['total_recommendations']}")
+            print(f"   Journals with ML profiles: {data['journals_with_profiles']}")
             if data['avg_similarity_score']:
-                print(f"   ⭐ Average similarity score: {data['avg_similarity_score']:.3f}")
+                print(f"   Average similarity score: {data['avg_similarity_score']:.3f}")
             else:
-                print("   ⭐ No similarity data available yet")
+                print("   No similarity data available yet")
             
             return data
         else:
-            print(f"❌ Stats request failed: {response.status_code}")
+            print(f"✗ Stats request failed: {response.status_code}")
             return None
             
     except requests.exceptions.RequestException as e:
-        print(f"❌ Stats request error: {e}")
+        print(f"✗ Stats request error: {e}")
         return None
 
 def test_health_check():
     """Test API health check"""
-    print("\n🏥 Testing health check...")
+    print("\nTesting health check...")
     
     try:
         response = requests.get(f"{API_BASE_URL}/ping", timeout=5)
         
         if response.status_code == 200:
             data = response.json()
-            print("✅ API is healthy!")
+            print("✓ API is healthy!")
             print(f"   Status: {data['status']}")
             print(f"   Service: {data['service']}")
             print(f"   Version: {data['version']}")
             return True
         else:
-            print(f"❌ Health check failed: {response.status_code}")
+            print(f"✗ Health check failed: {response.status_code}")
             return False
             
     except requests.exceptions.RequestException as e:
-        print(f"❌ Health check error: {e}")
+        print(f"✗ Health check error: {e}")
         return False
 
 def main():
     """Run comprehensive API examples"""
-    print("🧪 Journal Recommender API - Usage Examples")
+    print("Journal Recommender API - Usage Examples")
     print("=" * 50)
-    print(f"🌐 API Base URL: {API_BASE_URL}")
+    print(f"API Base URL: {API_BASE_URL}")
     
     # Test API health first
     if not test_health_check():
-        print("\n❌ API is not available. Make sure the server is running:")
+        print("\n✗ API is not available. Make sure the server is running:")
         print("   python launch_api.py")
         print("   or")
         print("   python -m uvicorn app.main:app --host 0.0.0.0 --port 8000")
@@ -214,13 +214,13 @@ def main():
     stats = test_stats_endpoint()
     
     if stats and stats['total_journals'] == 0:
-        print("\n⚠️  No journals found in database. Run data ingestion first:")
+        print("\n! No journals found in database. Run data ingestion first:")
         print("   python scripts/ingest_openalex.py")
         return
     
     # Test individual recommendations
     print("\n" + "="*50)
-    print("🔬 Individual Recommendation Tests")
+    print("Individual Recommendation Tests")
     print("="*50)
     
     results = {}
@@ -232,29 +232,29 @@ def main():
     
     # Test batch recommendations
     print("\n" + "="*50)
-    print("🔄 Batch Recommendation Test")
+    print("Batch Recommendation Test")
     print("="*50)
     
     batch_result = test_batch_recommendation()
     
     # Summary
     print("\n" + "="*50)
-    print("📋 Summary")
+    print("Summary")
     print("="*50)
     
-    print(f"✅ Successful individual tests: {len(results)}/{len(SAMPLE_ABSTRACTS)}")
-    print(f"✅ Batch test: {'Success' if batch_result else 'Failed'}")
+    print(f"✓ Successful individual tests: {len(results)}/{len(SAMPLE_ABSTRACTS)}")
+    print(f"✓ Batch test: {'Success' if batch_result else 'Failed'}")
     
     if results:
-        print("\n🏆 Best matches by field:")
+        print("\nBest matches by field:")
         for field, result in results.items():
             if result['recommendations']:
                 top = result['recommendations'][0]
                 print(f"   {field.replace('_', ' ').title()}: {top['journal_name']}")
                 print(f"      (score: {top['similarity_score']:.4f})")
     
-    print(f"\n🌐 Interactive API Documentation: {API_BASE_URL}/docs")
-    print("🎯 Use the web interface for more detailed testing!")
+    print(f"\nInteractive API Documentation: {API_BASE_URL}/docs")
+    print("Use the web interface for more detailed testing!")
 
 if __name__ == "__main__":
     main()
