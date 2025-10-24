@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field, validator
-from app.services.recommender import rank_journals
+from app.services.recommender import rank_journals, get_ranking_comparisons, analyze_text_distribution
 from app.models.base import SessionLocal
 from app.models.entities import Journal, QueryRun, Recommendation
 from sqlalchemy import func
@@ -105,8 +105,8 @@ def get_recommendations(request: RecommendationRequest):
         # Format response
         recommendations = [
             JournalRecommendation(
-                journal_name=result["journal"],
-                similarity_score=result["similarity"], 
+                journal_name=result["journal_name"],
+                similarity_score=result["similarity_combined"], 
                 rank=idx + 1
             )
             for idx, result in enumerate(results)
@@ -207,6 +207,78 @@ def get_database_stats():
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
+
+# Advanced recommendation endpoints
+@router.post("/recommend-detailed")
+def get_detailed_recommendations(request: RecommendationRequest):
+    """
+    Get detailed journal recommendations with individual TF-IDF, BERT, and combined similarity scores,
+    plus impact factors.
+    """
+    start_time = time.time()
+    
+    try:
+        results = rank_journals(request.abstract, top_k=request.top_k or 10)
+        
+        if not results:
+            raise HTTPException(
+                status_code=404, 
+                detail="No recommendations found. The database might be empty or your query is too specific."
+            )
+        
+        processing_time = (time.time() - start_time) * 1000
+        
+        return {
+            "recommendations": results,
+            "processing_time_ms": round(processing_time, 2),
+            "total_results": len(results)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/compare-rankings")
+def compare_rankings(request: RecommendationRequest):
+    """
+    Compare different ranking methods: similarity-based and impact factor-based.
+    """
+    start_time = time.time()
+    
+    try:
+        comparisons = get_ranking_comparisons(request.abstract, top_k=request.top_k or 10)
+        
+        processing_time = (time.time() - start_time) * 1000
+        
+        return {
+            "comparisons": comparisons,
+            "processing_time_ms": round(processing_time, 2)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/analyze-text")
+def analyze_text(request: RecommendationRequest):
+    """
+    Analyze text distribution and provide statistics for visualization
+    """
+    start_time = time.time()
+    
+    try:
+        analysis = analyze_text_distribution(request.abstract)
+        
+        processing_time = (time.time() - start_time) * 1000
+        
+        return {
+            "analysis": analysis,
+            "processing_time_ms": round(processing_time, 2)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # Legacy endpoint for backward compatibility
 @router.post("/recommend-simple")

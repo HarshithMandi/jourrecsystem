@@ -86,6 +86,51 @@ def get_database_stats():
     except Exception as e:
         return {"error": str(e)}
 
+def get_detailed_recommendations(abstract, top_k=10):
+    """Get detailed recommendations with similarity breakdowns."""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/api/recommend-detailed",
+            json={"abstract": abstract, "top_k": top_k},
+            timeout=30
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": f"API Error: {response.status_code}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+def get_ranking_comparisons(abstract, top_k=10):
+    """Get ranking comparisons by different methods."""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/api/compare-rankings",
+            json={"abstract": abstract, "top_k": top_k},
+            timeout=30
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": f"API Error: {response.status_code}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+def analyze_text_distribution(abstract):
+    """Get text analysis and distribution data."""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/api/analyze-text",
+            json={"abstract": abstract},
+            timeout=30
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": f"API Error: {response.status_code}"}
+    except Exception as e:
+        return {"error": str(e)}
+
 def main():
     """Main dashboard application."""
     
@@ -111,7 +156,7 @@ def main():
     # Main navigation
     page = st.sidebar.selectbox(
         "Choose a page:",
-        ["Home", "Single Recommendation", "Batch Analysis", "Database Statistics", "About"]
+        ["Home", "Single Recommendation", "Batch Analysis", "Advanced Analysis", "Database Statistics", "About"]
     )
     
     # Home Page
@@ -414,6 +459,186 @@ def main():
         
         else:
             st.info("Please enter or upload abstracts to begin batch analysis.")
+    
+    # Advanced Analysis Page
+    elif page == "Advanced Analysis":
+        st.header("Advanced Similarity Analysis")
+        st.markdown("Deep dive into similarity scores, ranking comparisons, and text distribution analysis.")
+        
+        abstract = st.text_area("Enter abstract for detailed analysis:", height=150)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            analysis_top_k = st.slider("Number of journals to analyze", 5, 20, 10)
+        with col2:
+            analysis_type = st.selectbox("Analysis Type", ["All", "Similarity Breakdown", "Ranking Comparison", "Text Distribution"])
+        
+        if st.button("Run Advanced Analysis", disabled=len(abstract) < 50):
+            with st.spinner("Running advanced analysis..."):
+                
+                # Similarity Score Breakdown
+                if analysis_type in ["All", "Similarity Breakdown"]:
+                    st.subheader("Similarity Score Breakdown")
+                    
+                    recommendations = get_detailed_recommendations(abstract, analysis_top_k)
+                    if "error" not in recommendations:
+                        # Create tabs for different similarity types
+                        tab1, tab2, tab3, tab4 = st.tabs(["Combined", "TF-IDF Only", "BERT Only", "Comparison"])
+                        
+                        with tab1:
+                            st.markdown("**Combined Similarity (30% TF-IDF + 70% BERT)**")
+                            df = pd.DataFrame(recommendations['recommendations'])
+                            df['Rank'] = range(1, len(df) + 1)
+                            
+                            # Bar chart for combined similarity
+                            fig = px.bar(df, x='journal_name', y='similarity_combined', 
+                                       title="Combined Similarity Scores",
+                                       labels={'similarity_combined': 'Similarity Score', 'journal_name': 'Journal'})
+                            fig.update_layout(xaxis_tickangle=45)
+                            st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Data table
+                            st.dataframe(df[['Rank', 'journal_name', 'similarity_combined', 'impact_factor', 'publisher']], 
+                                       use_container_width=True)
+                        
+                        with tab2:
+                            st.markdown("**TF-IDF Similarity Only**")
+                            fig_tfidf = px.bar(df, x='journal_name', y='similarity_tfidf',
+                                             title="TF-IDF Similarity Scores", 
+                                             color='similarity_tfidf', color_continuous_scale='Blues')
+                            fig_tfidf.update_layout(xaxis_tickangle=45)
+                            st.plotly_chart(fig_tfidf, use_container_width=True)
+                            
+                            st.dataframe(df[['Rank', 'journal_name', 'similarity_tfidf', 'impact_factor']], 
+                                       use_container_width=True)
+                        
+                        with tab3:
+                            st.markdown("**BERT Similarity Only**")
+                            fig_bert = px.bar(df, x='journal_name', y='similarity_bert',
+                                            title="BERT Similarity Scores",
+                                            color='similarity_bert', color_continuous_scale='Greens')
+                            fig_bert.update_layout(xaxis_tickangle=45)
+                            st.plotly_chart(fig_bert, use_container_width=True)
+                            
+                            st.dataframe(df[['Rank', 'journal_name', 'similarity_bert', 'impact_factor']], 
+                                       use_container_width=True)
+                        
+                        with tab4:
+                            st.markdown("**Similarity Methods Comparison**")
+                            
+                            # Correlation heatmap
+                            corr_data = []
+                            for _, row in df.iterrows():
+                                corr_data.append({
+                                    'Journal': row['journal_name'][:15] + '...' if len(row['journal_name']) > 15 else row['journal_name'],
+                                    'Combined': row['similarity_combined'],
+                                    'TF-IDF': row['similarity_tfidf'],
+                                    'BERT': row['similarity_bert'],
+                                    'Impact Factor': row['impact_factor'] / 10 if row['impact_factor'] else 0  # Normalize for visualization
+                                })
+                            
+                            corr_df = pd.DataFrame(corr_data)
+                            corr_df = corr_df.set_index('Journal')
+                            
+                            # Correlation matrix
+                            correlation_matrix = corr_df.corr()
+                            
+                            fig_corr = px.imshow(correlation_matrix,
+                                               title="Similarity Methods Correlation Matrix",
+                                               color_continuous_scale='RdBu_r',
+                                               aspect="auto")
+                            st.plotly_chart(fig_corr, use_container_width=True)
+                            
+                            # Scatter plot: TF-IDF vs BERT
+                            fig_scatter = px.scatter(df, x='similarity_tfidf', y='similarity_bert',
+                                                   hover_data=['journal_name'], 
+                                                   title="TF-IDF vs BERT Similarity")
+                            st.plotly_chart(fig_scatter, use_container_width=True)
+                
+                # Ranking Comparison
+                if analysis_type in ["All", "Ranking Comparison"]:
+                    st.subheader("Ranking Comparison Analysis")
+                    
+                    comparisons = get_ranking_comparisons(abstract, analysis_top_k)
+                    if "error" not in comparisons:
+                        comp_data = comparisons['comparisons']
+                        
+                        tab1, tab2, tab3 = st.tabs(["Side by Side", "Rank Changes", "Method Analysis"])
+                        
+                        with tab1:
+                            col1, col2, col3, col4 = st.columns(4)
+                            
+                            with col1:
+                                st.markdown("**Combined Similarity**")
+                                for i, journal in enumerate(comp_data['similarity_ranking'][:5], 1):
+                                    st.write(f"{i}. {journal['journal_name'][:20]}...")
+                            
+                            with col2:
+                                st.markdown("**TF-IDF Only**")
+                                for i, journal in enumerate(comp_data['tfidf_only_ranking'][:5], 1):
+                                    st.write(f"{i}. {journal['journal_name'][:20]}...")
+                            
+                            with col3:
+                                st.markdown("**BERT Only**")
+                                for i, journal in enumerate(comp_data['bert_only_ranking'][:5], 1):
+                                    st.write(f"{i}. {journal['journal_name'][:20]}...")
+                            
+                            with col4:
+                                st.markdown("**Impact Factor**")
+                                for i, journal in enumerate(comp_data['impact_factor_ranking'][:5], 1):
+                                    st.write(f"{i}. {journal['journal_name'][:20]}...")
+                
+                # Text Distribution Analysis
+                if analysis_type in ["All", "Text Distribution"]:
+                    st.subheader("Text Distribution Analysis")
+                    
+                    text_analysis = analyze_text_distribution(abstract)
+                    if "error" not in text_analysis:
+                        analysis_data = text_analysis['analysis']
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            # Word frequency chart
+                            word_freq = analysis_data['word_frequency']
+                            if word_freq:
+                                freq_df = pd.DataFrame(list(word_freq.items()), columns=['Word', 'Frequency'])
+                                fig_words = px.bar(freq_df, x='Word', y='Frequency',
+                                                 title="Most Frequent Words")
+                                fig_words.update_layout(xaxis_tickangle=45)
+                                st.plotly_chart(fig_words, use_container_width=True)
+                        
+                        with col2:
+                            # Text statistics
+                            stats = analysis_data
+                            if stats:
+                                col2a, col2b = st.columns(2)
+                                with col2a:
+                                    st.metric("Total Words", stats['total_words'])
+                                    st.metric("Avg Word Length", f"{stats['avg_word_length']:.1f}")
+                                with col2b:
+                                    st.metric("Unique Words", stats['unique_words'])
+                                    st.metric("Sentences", stats['sentence_count'])
+                        
+                        # Vector visualization (simplified)
+                        st.markdown("**Vector Space Analysis**")
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            if 'tfidf_vector_stats' in analysis_data:
+                                tfidf_stats = analysis_data['tfidf_vector_stats']
+                                st.markdown("**TF-IDF Vector**")
+                                st.metric("Dimensions", tfidf_stats['dimensions'])
+                                st.metric("Non-zero Features", tfidf_stats['non_zero_features'])
+                                st.metric("Max Value", f"{tfidf_stats['max_value']:.3f}")
+                        
+                        with col2:
+                            if 'bert_vector_stats' in analysis_data:
+                                bert_stats = analysis_data['bert_vector_stats']
+                                st.markdown("**BERT Vector**")
+                                st.metric("Dimensions", bert_stats['dimensions'])
+                                st.metric("Mean Value", f"{bert_stats['mean_value']:.3f}")
+                                st.metric("Std Deviation", f"{bert_stats['std_value']:.3f}")
     
     # Database Statistics Page
     elif page == "Database Statistics":
