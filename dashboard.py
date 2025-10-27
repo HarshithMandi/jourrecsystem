@@ -646,36 +646,193 @@ def main():
                                        use_container_width=True)
                         
                         with tab4:
-                            st.markdown("**Similarity Methods Comparison**")
+                            st.markdown("**Similarity Methods Comparison & Heatmaps**")
                             
-                            # Correlation heatmap
-                            corr_data = []
-                            for _, row in df.iterrows():
-                                corr_data.append({
-                                    'Journal': row['journal_name'][:15] + '...' if len(row['journal_name']) > 15 else row['journal_name'],
-                                    'Combined': row['similarity_combined'],
-                                    'TF-IDF': row['similarity_tfidf'],
-                                    'BERT': row['similarity_bert'],
-                                    'Impact Factor': row['impact_factor'] / 10 if row['impact_factor'] else 0  # Normalize for visualization
-                                })
+                            # Create multiple heatmap visualizations
+                            heatmap_tab1, heatmap_tab2, heatmap_tab3 = st.tabs(["Correlation Matrix", "Journal Similarity Heatmap", "Performance Matrix"])
                             
-                            corr_df = pd.DataFrame(corr_data)
-                            corr_df = corr_df.set_index('Journal')
+                            with heatmap_tab1:
+                                st.markdown("**Methods Correlation Heatmap**")
+                                # Correlation heatmap
+                                corr_data = []
+                                for _, row in df.iterrows():
+                                    corr_data.append({
+                                        'Combined': row['similarity_combined'],
+                                        'TF-IDF': row['similarity_tfidf'],
+                                        'BERT': row['similarity_bert'],
+                                        'Impact Factor': (row['impact_factor'] / 100) if row['impact_factor'] else 0  # Normalize for visualization
+                                    })
+                                
+                                corr_df = pd.DataFrame(corr_data)
+                                correlation_matrix = corr_df.corr()
+                                
+                                # Enhanced correlation heatmap with annotations
+                                fig_corr = go.Figure(data=go.Heatmap(
+                                    z=correlation_matrix.values,
+                                    x=correlation_matrix.columns,
+                                    y=correlation_matrix.index,
+                                    colorscale='RdBu_r',
+                                    zmid=0,
+                                    text=correlation_matrix.round(3).values,
+                                    texttemplate="%{text}",
+                                    textfont={"size": 12},
+                                    hoverongaps=False
+                                ))
+                                fig_corr.update_layout(
+                                    title="Similarity Methods Correlation Matrix",
+                                    xaxis_title="Methods",
+                                    yaxis_title="Methods"
+                                )
+                                st.plotly_chart(fig_corr, use_container_width=True)
+                                
+                                # Interpretation
+                                st.markdown("""
+                                **Interpretation:**
+                                - Values close to 1 (red): Strong positive correlation
+                                - Values close to 0 (white): No correlation  
+                                - Values close to -1 (blue): Strong negative correlation
+                                """)
                             
-                            # Correlation matrix
-                            correlation_matrix = corr_df.corr()
+                            with heatmap_tab2:
+                                st.markdown("**Journal Similarity Score Heatmap**")
+                                
+                                # Create journal similarity matrix
+                                journal_names = [name[:20] + '...' if len(name) > 20 else name for name in df['journal_name']]
+                                similarity_matrix = []
+                                
+                                for _, row1 in df.iterrows():
+                                    row_similarities = []
+                                    for _, row2 in df.iterrows():
+                                        # Calculate similarity between journals based on their scores
+                                        combined_sim = abs(row1['similarity_combined'] - row2['similarity_combined'])
+                                        tfidf_sim = abs(row1['similarity_tfidf'] - row2['similarity_tfidf']) 
+                                        bert_sim = abs(row1['similarity_bert'] - row2['similarity_bert'])
+                                        
+                                        # Average difference (lower = more similar)
+                                        avg_diff = (combined_sim + tfidf_sim + bert_sim) / 3
+                                        # Convert to similarity (1 - difference)
+                                        similarity = 1 - avg_diff
+                                        row_similarities.append(similarity)
+                                    similarity_matrix.append(row_similarities)
+                                
+                                fig_journal_heatmap = go.Figure(data=go.Heatmap(
+                                    z=similarity_matrix,
+                                    x=journal_names,
+                                    y=journal_names,
+                                    colorscale='Viridis',
+                                    text=[[f"{val:.3f}" for val in row] for row in similarity_matrix],
+                                    texttemplate="%{text}",
+                                    textfont={"size": 8},
+                                    hoverongaps=False
+                                ))
+                                fig_journal_heatmap.update_layout(
+                                    title="Inter-Journal Similarity Heatmap",
+                                    xaxis_title="Journals",
+                                    yaxis_title="Journals",
+                                    xaxis_tickangle=45
+                                )
+                                st.plotly_chart(fig_journal_heatmap, use_container_width=True)
+                                
+                                st.markdown("""
+                                **Interpretation:**
+                                - Bright colors: Journals have similar similarity patterns
+                                - Dark colors: Journals have different similarity patterns
+                                - Diagonal is always brightest (journal compared to itself)
+                                """)
                             
-                            fig_corr = px.imshow(correlation_matrix,
-                                               title="Similarity Methods Correlation Matrix",
-                                               color_continuous_scale='RdBu_r',
-                                               aspect="auto")
-                            st.plotly_chart(fig_corr, use_container_width=True)
+                            with heatmap_tab3:
+                                st.markdown("**Performance vs Impact Factor Matrix**")
+                                
+                                # Create performance matrix heatmap
+                                performance_data = []
+                                methods = ['similarity_combined', 'similarity_tfidf', 'similarity_bert']
+                                method_names = ['Combined', 'TF-IDF', 'BERT']
+                                
+                                # Group journals by impact factor ranges
+                                df['impact_range'] = pd.cut(df['impact_factor'].fillna(0), 
+                                                          bins=[0, 5, 10, 20, 50, 100], 
+                                                          labels=['0-5', '5-10', '10-20', '20-50', '50+'])
+                                
+                                performance_matrix = []
+                                impact_ranges = ['0-5', '5-10', '10-20', '20-50', '50+']
+                                
+                                for method in methods:
+                                    method_row = []
+                                    for impact_range in impact_ranges:
+                                        range_journals = df[df['impact_range'] == impact_range]
+                                        if not range_journals.empty:
+                                            avg_score = range_journals[method].mean()
+                                        else:
+                                            avg_score = 0
+                                        method_row.append(avg_score)
+                                    performance_matrix.append(method_row)
+                                
+                                fig_performance = go.Figure(data=go.Heatmap(
+                                    z=performance_matrix,
+                                    x=['Impact: ' + r for r in impact_ranges],
+                                    y=method_names,
+                                    colorscale='Blues',
+                                    text=[[f"{val:.3f}" for val in row] for row in performance_matrix],
+                                    texttemplate="%{text}",
+                                    textfont={"size": 12},
+                                    hoverongaps=False
+                                ))
+                                fig_performance.update_layout(
+                                    title="Average Similarity Scores by Impact Factor Range",
+                                    xaxis_title="Impact Factor Range",
+                                    yaxis_title="Similarity Methods"
+                                )
+                                st.plotly_chart(fig_performance, use_container_width=True)
+                                
+                                st.markdown("""
+                                **Interpretation:**
+                                - Shows how different similarity methods perform across journal impact factor ranges
+                                - Helps identify if high-impact journals score differently than lower-impact ones
+                                - Useful for understanding method bias toward prestigious journals
+                                """)
                             
-                            # Scatter plot: TF-IDF vs BERT
-                            fig_scatter = px.scatter(df, x='similarity_tfidf', y='similarity_bert',
-                                                   hover_data=['journal_name'], 
-                                                   title="TF-IDF vs BERT Similarity")
-                            st.plotly_chart(fig_scatter, use_container_width=True)
+                            # Additional scatter plot section
+                            st.markdown("---")
+                            st.markdown("**Detailed Comparison Plots**")
+                            
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                # Enhanced scatter plot: TF-IDF vs BERT
+                                fig_scatter = px.scatter(
+                                    df, 
+                                    x='similarity_tfidf', 
+                                    y='similarity_bert',
+                                    size='impact_factor',
+                                    color='similarity_combined',
+                                    hover_data=['journal_name', 'publisher'],
+                                    title="TF-IDF vs BERT Similarity",
+                                    labels={
+                                        'similarity_tfidf': 'TF-IDF Score',
+                                        'similarity_bert': 'BERT Score'
+                                    },
+                                    color_continuous_scale='Viridis'
+                                )
+                                fig_scatter.update_traces(marker=dict(line=dict(width=1, color='black')))
+                                st.plotly_chart(fig_scatter, use_container_width=True)
+                            
+                            with col2:
+                                # Bubble chart: Combined score vs Impact Factor
+                                fig_bubble = px.scatter(
+                                    df,
+                                    x='impact_factor',
+                                    y='similarity_combined', 
+                                    size='similarity_bert',
+                                    color='similarity_tfidf',
+                                    hover_data=['journal_name'],
+                                    title="Impact Factor vs Combined Similarity",
+                                    labels={
+                                        'impact_factor': 'Impact Factor',
+                                        'similarity_combined': 'Combined Similarity Score'
+                                    },
+                                    color_continuous_scale='Plasma'
+                                )
+                                st.plotly_chart(fig_bubble, use_container_width=True)
                 
                 # Ranking Comparison
                 if analysis_type in ["All", "Ranking Comparison"]:
@@ -685,7 +842,7 @@ def main():
                     if "error" not in comparisons:
                         comp_data = comparisons['comparisons']
                         
-                        tab1, tab2, tab3 = st.tabs(["Side by Side", "Rank Changes", "Method Analysis"])
+                        tab1, tab2, tab3, tab4 = st.tabs(["Side by Side", "Rank Changes", "Ranking Heatmap", "Method Analysis"])
                         
                         with tab1:
                             col1, col2, col3, col4 = st.columns(4)
@@ -709,6 +866,172 @@ def main():
                                 st.markdown("**Impact Factor**")
                                 for i, journal in enumerate(comp_data['impact_factor_ranking'][:5], 1):
                                     st.write(f"{i}. {journal['journal_name'][:20]}...")
+                        
+                        with tab2:
+                            st.markdown("**Rank Position Changes Across Methods**")
+                            
+                            # Create rank change analysis
+                            rank_data = []
+                            methods = ['similarity_ranking', 'tfidf_only_ranking', 'bert_only_ranking', 'impact_factor_ranking']
+                            method_names = ['Combined', 'TF-IDF', 'BERT', 'Impact Factor']
+                            
+                            # Get all unique journals
+                            all_journals = set()
+                            for method in methods:
+                                for journal in comp_data[method][:analysis_top_k]:
+                                    all_journals.add(journal['journal_name'])
+                            
+                            # Create rank position matrix
+                            for journal_name in all_journals:
+                                journal_ranks = []
+                                for method in methods:
+                                    # Find rank of this journal in this method
+                                    rank = None
+                                    for i, journal in enumerate(comp_data[method][:analysis_top_k]):
+                                        if journal['journal_name'] == journal_name:
+                                            rank = i + 1
+                                            break
+                                    journal_ranks.append(rank if rank else analysis_top_k + 1)
+                                
+                                rank_data.append({
+                                    'Journal': journal_name[:20] + '...' if len(journal_name) > 20 else journal_name,
+                                    'Combined': journal_ranks[0],
+                                    'TF-IDF': journal_ranks[1], 
+                                    'BERT': journal_ranks[2],
+                                    'Impact Factor': journal_ranks[3]
+                                })
+                            
+                            rank_df = pd.DataFrame(rank_data)
+                            
+                            # Display as table with color coding
+                            st.dataframe(
+                                rank_df.style.background_gradient(subset=['Combined', 'TF-IDF', 'BERT', 'Impact Factor'], 
+                                                                cmap='RdYlGn_r', vmin=1, vmax=analysis_top_k),
+                                use_container_width=True
+                            )
+                            
+                            st.markdown("""
+                            **Color Coding:** Green = Higher rank (better), Red = Lower rank (worse)
+                            """)
+                        
+                        with tab3:
+                            st.markdown("**Comprehensive Ranking Heatmap**")
+                            
+                            # Create ranking position heatmap
+                            if rank_data:
+                                # Prepare data for heatmap
+                                journals_list = [item['Journal'] for item in rank_data]
+                                ranking_matrix = []
+                                
+                                for method_name in method_names:
+                                    method_ranks = [item[method_name] for item in rank_data]
+                                    ranking_matrix.append(method_ranks)
+                                
+                                # Create heatmap
+                                fig_ranking_heatmap = go.Figure(data=go.Heatmap(
+                                    z=ranking_matrix,
+                                    x=journals_list,
+                                    y=method_names,
+                                    colorscale='RdYlGn_r',  # Red for high ranks (bad), Green for low ranks (good)
+                                    text=[[f"#{rank}" for rank in row] for row in ranking_matrix],
+                                    texttemplate="%{text}",
+                                    textfont={"size": 10},
+                                    hoverongaps=False,
+                                    zmin=1,
+                                    zmax=analysis_top_k
+                                ))
+                                fig_ranking_heatmap.update_layout(
+                                    title=f"Ranking Positions Across All Methods (Top {analysis_top_k})",
+                                    xaxis_title="Journals",
+                                    yaxis_title="Ranking Methods",
+                                    xaxis_tickangle=45,
+                                    height=400
+                                )
+                                st.plotly_chart(fig_ranking_heatmap, use_container_width=True)
+                                
+                                # Add ranking consistency analysis
+                                st.markdown("**Ranking Consistency Analysis**")
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    # Calculate rank variance for each journal
+                                    rank_variance = []
+                                    for item in rank_data:
+                                        ranks = [item[method] for method in method_names]
+                                        variance = pd.Series(ranks).var()
+                                        rank_variance.append({
+                                            'Journal': item['Journal'],
+                                            'Rank Variance': variance,
+                                            'Consistency': 'High' if variance < 2 else 'Medium' if variance < 5 else 'Low'
+                                        })
+                                    
+                                    variance_df = pd.DataFrame(rank_variance).sort_values('Rank Variance')
+                                    st.dataframe(variance_df, use_container_width=True)
+                                
+                                with col2:
+                                    # Rank variance visualization
+                                    fig_variance = px.bar(
+                                        variance_df, 
+                                        x='Journal', 
+                                        y='Rank Variance',
+                                        color='Consistency',
+                                        title="Ranking Consistency by Journal",
+                                        labels={'Rank Variance': 'Rank Variance (Lower = More Consistent)'}
+                                    )
+                                    fig_variance.update_layout(xaxis_tickangle=45)
+                                    st.plotly_chart(fig_variance, use_container_width=True)
+                                
+                                st.markdown("""
+                                **Interpretation:**
+                                - **Green cells**: Top rankings (position 1-3)
+                                - **Yellow cells**: Middle rankings (position 4-7)  
+                                - **Red cells**: Lower rankings (position 8+)
+                                - **Low variance**: Journal ranks consistently across methods
+                                - **High variance**: Journal ranking varies significantly by method
+                                """)
+                        
+                        with tab4:
+                            st.markdown("**Method Performance Analysis**")
+                            
+                            # Method comparison statistics
+                            if rank_data:
+                                method_stats = []
+                                for method_name in method_names:
+                                    method_ranks = [item[method_name] for item in rank_data]
+                                    avg_rank = sum(method_ranks) / len(method_ranks)
+                                    std_rank = pd.Series(method_ranks).std()
+                                    min_rank = min(method_ranks)
+                                    max_rank = max(method_ranks)
+                                    
+                                    method_stats.append({
+                                        'Method': method_name,
+                                        'Average Rank': round(avg_rank, 2),
+                                        'Std Deviation': round(std_rank, 2),
+                                        'Best Rank': min_rank,
+                                        'Worst Rank': max_rank,
+                                        'Performance Score': round(10 - avg_rank, 2)  # Higher is better
+                                    })
+                                
+                                stats_df = pd.DataFrame(method_stats)
+                                st.dataframe(stats_df, use_container_width=True)
+                                
+                                # Performance comparison chart
+                                fig_performance = px.bar(
+                                    stats_df,
+                                    x='Method',
+                                    y='Performance Score',
+                                    title="Method Performance Comparison",
+                                    color='Performance Score',
+                                    color_continuous_scale='viridis'
+                                )
+                                st.plotly_chart(fig_performance, use_container_width=True)
+                                
+                                st.markdown("""
+                                **Performance Metrics:**
+                                - **Performance Score**: Higher values indicate better average ranking
+                                - **Std Deviation**: Lower values indicate more consistent rankings
+                                - **Best/Worst Rank**: Range of ranking positions achieved
+                                """)
                 
                 # Text Distribution Analysis
                 if analysis_type in ["All", "Text Distribution"]:
@@ -718,49 +1041,158 @@ def main():
                     if "error" not in text_analysis:
                         analysis_data = text_analysis['analysis']
                         
-                        col1, col2 = st.columns(2)
+                        # Create tabs for different text analysis views
+                        text_tab1, text_tab2, text_tab3 = st.tabs(["Word Analysis", "Vector Analysis", "Text Feature Heatmap"])
                         
-                        with col1:
-                            # Word frequency chart
-                            word_freq = analysis_data['word_frequency']
+                        with text_tab1:
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                # Word frequency chart
+                                word_freq = analysis_data['word_frequency']
+                                if word_freq:
+                                    freq_df = pd.DataFrame(list(word_freq.items()), columns=['Word', 'Frequency'])
+                                    fig_words = px.bar(freq_df, x='Word', y='Frequency',
+                                                     title="Most Frequent Words",
+                                                     color='Frequency',
+                                                     color_continuous_scale='Blues')
+                                    fig_words.update_layout(xaxis_tickangle=45)
+                                    st.plotly_chart(fig_words, use_container_width=True)
+                            
+                            with col2:
+                                # Text statistics
+                                stats = analysis_data
+                                if stats:
+                                    col2a, col2b = st.columns(2)
+                                    with col2a:
+                                        st.metric("Total Words", stats['total_words'])
+                                        st.metric("Avg Word Length", f"{stats['avg_word_length']:.1f}")
+                                    with col2b:
+                                        st.metric("Unique Words", stats['unique_words'])
+                                        st.metric("Sentences", stats['sentence_count'])
+                        
+                        with text_tab2:
+                            # Vector visualization (simplified)
+                            st.markdown("**Vector Space Analysis**")
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                if 'tfidf_vector_stats' in analysis_data:
+                                    tfidf_stats = analysis_data['tfidf_vector_stats']
+                                    st.markdown("**TF-IDF Vector**")
+                                    st.metric("Dimensions", tfidf_stats['dimensions'])
+                                    st.metric("Non-zero Features", tfidf_stats['non_zero_features'])
+                                    st.metric("Max Value", f"{tfidf_stats['max_value']:.3f}")
+                            
+                            with col2:
+                                if 'bert_vector_stats' in analysis_data:
+                                    bert_stats = analysis_data['bert_vector_stats']
+                                    st.markdown("**BERT Vector**")
+                                    st.metric("Dimensions", bert_stats['dimensions'])
+                                    st.metric("Mean Value", f"{bert_stats['mean_value']:.3f}")
+                                    st.metric("Std Deviation", f"{bert_stats['std_value']:.3f}")
+                        
+                        with text_tab3:
+                            st.markdown("**Text Feature Analysis Heatmap**")
+                            
+                            # Create a comprehensive text feature heatmap
                             if word_freq:
-                                freq_df = pd.DataFrame(list(word_freq.items()), columns=['Word', 'Frequency'])
-                                fig_words = px.bar(freq_df, x='Word', y='Frequency',
-                                                 title="Most Frequent Words")
-                                fig_words.update_layout(xaxis_tickangle=45)
-                                st.plotly_chart(fig_words, use_container_width=True)
-                        
-                        with col2:
-                            # Text statistics
-                            stats = analysis_data
-                            if stats:
-                                col2a, col2b = st.columns(2)
-                                with col2a:
-                                    st.metric("Total Words", stats['total_words'])
-                                    st.metric("Avg Word Length", f"{stats['avg_word_length']:.1f}")
-                                with col2b:
-                                    st.metric("Unique Words", stats['unique_words'])
-                                    st.metric("Sentences", stats['sentence_count'])
-                        
-                        # Vector visualization (simplified)
-                        st.markdown("**Vector Space Analysis**")
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            if 'tfidf_vector_stats' in analysis_data:
-                                tfidf_stats = analysis_data['tfidf_vector_stats']
-                                st.markdown("**TF-IDF Vector**")
-                                st.metric("Dimensions", tfidf_stats['dimensions'])
-                                st.metric("Non-zero Features", tfidf_stats['non_zero_features'])
-                                st.metric("Max Value", f"{tfidf_stats['max_value']:.3f}")
-                        
-                        with col2:
-                            if 'bert_vector_stats' in analysis_data:
-                                bert_stats = analysis_data['bert_vector_stats']
-                                st.markdown("**BERT Vector**")
-                                st.metric("Dimensions", bert_stats['dimensions'])
-                                st.metric("Mean Value", f"{bert_stats['mean_value']:.3f}")
-                                st.metric("Std Deviation", f"{bert_stats['std_value']:.3f}")
+                                # Get top words and their properties
+                                top_words = list(word_freq.items())[:15]  # Top 15 words
+                                
+                                # Create feature matrix
+                                features = []
+                                feature_names = ['Frequency', 'Length', 'Vowel Ratio', 'Consonant Ratio', 'Alphabetic Ratio']
+                                
+                                for word, freq in top_words:
+                                    word_length = len(word)
+                                    vowels = sum(1 for char in word.lower() if char in 'aeiou')
+                                    consonants = sum(1 for char in word.lower() if char.isalpha() and char not in 'aeiou')
+                                    alphabetic = sum(1 for char in word if char.isalpha())
+                                    
+                                    vowel_ratio = vowels / word_length if word_length > 0 else 0
+                                    consonant_ratio = consonants / word_length if word_length > 0 else 0
+                                    alphabetic_ratio = alphabetic / word_length if word_length > 0 else 0
+                                    
+                                    features.append([
+                                        freq / max(word_freq.values()),  # Normalized frequency
+                                        word_length / 10,  # Normalized length
+                                        vowel_ratio,
+                                        consonant_ratio,
+                                        alphabetic_ratio
+                                    ])
+                                
+                                word_list = [word for word, _ in top_words]
+                                
+                                # Create heatmap
+                                fig_text_heatmap = go.Figure(data=go.Heatmap(
+                                    z=list(zip(*features)),  # Transpose for correct orientation
+                                    x=word_list,
+                                    y=feature_names,
+                                    colorscale='Viridis',
+                                    text=[[f"{val:.2f}" for val in row] for row in zip(*features)],
+                                    texttemplate="%{text}",
+                                    textfont={"size": 9},
+                                    hoverongaps=False
+                                ))
+                                fig_text_heatmap.update_layout(
+                                    title="Word Feature Analysis Heatmap",
+                                    xaxis_title="Top Words",
+                                    yaxis_title="Features",
+                                    xaxis_tickangle=45,
+                                    height=400
+                                )
+                                st.plotly_chart(fig_text_heatmap, use_container_width=True)
+                                
+                                # Add word length distribution heatmap
+                                st.markdown("**Word Length Distribution Matrix**")
+                                
+                                # Group words by length and frequency
+                                length_freq_matrix = {}
+                                for word, freq in word_freq.items():
+                                    length = len(word)
+                                    if length not in length_freq_matrix:
+                                        length_freq_matrix[length] = []
+                                    length_freq_matrix[length].append(freq)
+                                
+                                # Create matrix for heatmap
+                                lengths = sorted(length_freq_matrix.keys())[:10]  # Limit to reasonable lengths
+                                freq_ranges = ['Low (1-2)', 'Medium (3-5)', 'High (6+)']
+                                
+                                matrix_data = []
+                                for length in lengths:
+                                    freqs = length_freq_matrix[length]
+                                    low_count = sum(1 for f in freqs if f <= 2)
+                                    med_count = sum(1 for f in freqs if 3 <= f <= 5)
+                                    high_count = sum(1 for f in freqs if f >= 6)
+                                    matrix_data.append([low_count, med_count, high_count])
+                                
+                                fig_length_heatmap = go.Figure(data=go.Heatmap(
+                                    z=list(zip(*matrix_data)),
+                                    x=[f"Length {l}" for l in lengths],
+                                    y=freq_ranges,
+                                    colorscale='Blues',
+                                    text=[[f"{val}" for val in row] for row in zip(*matrix_data)],
+                                    texttemplate="%{text}",
+                                    textfont={"size": 10},
+                                    hoverongaps=False
+                                ))
+                                fig_length_heatmap.update_layout(
+                                    title="Word Count by Length and Frequency Range",
+                                    xaxis_title="Word Length",
+                                    yaxis_title="Frequency Range",
+                                    height=300
+                                )
+                                st.plotly_chart(fig_length_heatmap, use_container_width=True)
+                                
+                                st.markdown("""
+                                **Feature Explanations:**
+                                - **Frequency**: How often the word appears (normalized)
+                                - **Length**: Number of characters in the word (normalized)
+                                - **Vowel Ratio**: Proportion of vowels in the word
+                                - **Consonant Ratio**: Proportion of consonants in the word
+                                - **Alphabetic Ratio**: Proportion of alphabetic characters
+                                """)
     
     # System Statistics Page
     elif page == "System Statistics":
