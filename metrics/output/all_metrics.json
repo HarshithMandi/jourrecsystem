@@ -1,0 +1,494 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-08T16:47:56.539923",
+    "time_window_hours": 24,
+    "version": "1.0"
+  },
+  "performance": {
+    "response_time": {
+      "mean_ms": 0,
+      "median_ms": 0,
+      "std_ms": 0,
+      "min_ms": 0,
+      "max_ms": 0,
+      "p95_ms": 0,
+      "p99_ms": 0,
+      "total_requests": 0
+    },
+    "throughput": {
+      "total_queries": 117,
+      "time_window_hours": 24,
+      "queries_per_minute": 0.08,
+      "queries_per_hour": 4.88,
+      "queries_per_second": 0.0014,
+      "avg_throughput": "4.88 queries/hour"
+    },
+    "latency_distribution": {
+      "error": "No timing data available"
+    },
+    "component_breakdown": {
+      "component_breakdown": {},
+      "total_time_ms": 0
+    },
+    "slow_queries": []
+  },
+  "accuracy": {
+    "similarity_distribution": {
+      "distribution": {
+        "0.0-0.1": 26,
+        "0.1-0.2": 415,
+        "0.2-0.3": 257,
+        "0.3-0.4": 77,
+        "0.4-0.5": 26,
+        "0.5-0.6": 3,
+        "0.6-0.7": 0,
+        "0.7-0.8": 0,
+        "0.8-0.9": 0,
+        "0.9-1.0": 0
+      },
+      "statistics": {
+        "mean": 0.20997122560589848,
+        "median": 0.1894829337807114,
+        "std": 0.0857113831714745,
+        "min": 0.09105856408563692,
+        "max": 0.5794702724509184,
+        "q25": 0.13945966252215036,
+        "q75": 0.25573305103769184
+      },
+      "high_quality_recommendations": 0,
+      "medium_quality_recommendations": 29,
+      "low_quality_recommendations": 775,
+      "total_recommendations": 804,
+      "time_window_hours": 24
+    },
+    "ranking_quality": {
+      "top1_avg_score": 0.3534756108127993,
+      "top3_avg_score": 0.28490633923306263,
+      "top5_avg_score": 0.23900299538271416,
+      "avg_score_drop_between_ranks": 0.02051829923616649,
+      "avg_top1_to_top10_gap": 0.15164794936456374,
+      "ranking_consistency": 0.626,
+      "total_queries_analyzed": 117
+    },
+    "recommendation_diversity": {
+      "unique_journals_recommended": 114,
+      "unique_publishers": 32,
+      "top_publishers": {
+        "https://openalex.org/P4310320990": 13,
+        "https://openalex.org/P4310320595": 6,
+        "https://openalex.org/P4310319908": 4,
+        "Nature Publishing Group": 2,
+        "IEEE": 2,
+        "https://openalex.org/P4310311648": 2,
+        "https://openalex.org/P4310319900": 2,
+        "https://openalex.org/P4310319965": 2,
+        "https://openalex.org/P4310311721": 2,
+        "https://openalex.org/P4310320239": 1
+      },
+      "open_access_ratio": 0.219,
+      "open_access_count": 25,
+      "traditional_count": 89,
+      "subject_diversity": 410,
+      "top_subjects": {
+        "Genomics and Phylogenetic Studies": 12,
+        "Energy and Environment Impacts": 10,
+        "Magnetic confinement fusion research": 9,
+        "Plant Pathogens and Fungal Diseases": 9,
+        "Diverse Scientific and Economic Studies": 8,
+        "Mycorrhizal Fungi and Plant Interactions": 8,
+        "Photovoltaic System Optimization Techniques": 8,
+        "RNA and protein synthesis mechanisms": 7,
+        "Climate Change Policy and Economics": 7,
+        "Solar Thermal and Photovoltaic Systems": 7
+      }
+    }
+  },
+  "system": {
+    "database_stats": {
+      "journals": {
+        "total": 1776,
+        "with_profiles": 1776,
+        "open_access": 439,
+        "with_impact_factor": 23,
+        "with_issn": 1500,
+        "with_subjects": 1776
+      },
+      "profiles": {
+        "total": 1776,
+        "with_tfidf_vectors": 1776,
+        "with_bert_vectors": 1776,
+        "with_both_vectors": 1776
+      },
+      "works": {
+        "total": 0,
+        "with_abstracts": 0
+      },
+      "queries": {
+        "total": 147,
+        "with_recommendations": 122
+      },
+      "recommendations": {
+        "total": 1092
+      },
+      "coverage": {
+        "profile_coverage": 100.0,
+        "impact_factor_coverage": 1.3,
+        "subject_coverage": 100.0,
+        "vector_coverage": 100.0
+      }
+    },
+    "vector_quality": {
+      "tfidf_vectors": {
+        "avg_dimensions": 1651.0,
+        "avg_non_zero_features": 3.67,
+        "avg_norm": 1.0,
+        "avg_mean_value": 0.0010677515930629928,
+        "sparsity": 0.9977771047849788
+      },
+      "bert_vectors": {
+        "avg_dimensions": 384.0,
+        "avg_norm": 1.0000000020878614,
+        "avg_mean_value": 0.0004133262332228618,
+        "avg_std_value": 0.05102418312577377
+      },
+      "samples_analyzed": 100,
+      "anomalies": {
+        "zero_norm_tfidf": 0,
+        "zero_norm_bert": 0,
+        "unexpected_tfidf_dims": 0,
+        "unexpected_bert_dims": 0
+      }
+    },
+    "data_coverage": {
+      "total_journals": 1776,
+      "field_completeness": {
+        "name": {
+          "count": 1776,
+          "percentage": 100.0
+        },
+        "display_name": {
+          "count": 1776,
+          "percentage": 100.0
+        },
+        "issn": {
+          "count": 1500,
+          "percentage": 84.46
+        },
+        "eissn": {
+          "count": 1410,
+          "percentage": 79.39
+        },
+        "publisher": {
+          "count": 1315,
+          "percentage": 74.04
+        },
+        "impact_factor": {
+          "count": 23,
+          "percentage": 1.3
+        },
+        "subjects": {
+          "count": 1776,
+          "percentage": 100.0
+        },
+        "profile": {
+          "count": 1776,
+          "percentage": 100.0
+        }
+      },
+      "overall_quality_score": 79.41,
+      "missing_data_impact": {
+        "journals_without_vectors": 0,
+        "journals_without_impact_factor": 1753,
+        "journals_without_subjects": 0
+      }
+    },
+    "system_health": {
+      "status": "HEALTHY",
+      "health_score": 100.0,
+      "checks": {
+        "database_accessible": true,
+        "journals_present": true,
+        "vectors_present": true,
+        "recent_activity": true,
+        "data_quality_acceptable": true
+      },
+      "issues": [],
+      "warnings": [],
+      "timestamp": "2025-11-08T16:47:56.814287"
+    },
+    "publisher_stats": {
+      "total_publishers": 258,
+      "top_10_publishers": {
+        "https://openalex.org/P4310320990": 239,
+        "https://openalex.org/P4310320595": 148,
+        "https://openalex.org/P4310319900": 129,
+        "https://openalex.org/P4310320547": 75,
+        "https://openalex.org/P4310320017": 38,
+        "https://openalex.org/P4310311648": 37,
+        "https://openalex.org/P4310311721": 33,
+        "https://openalex.org/P4310320527": 23,
+        "https://openalex.org/P4310320006": 22,
+        "https://openalex.org/P4310319908": 21
+      },
+      "publishers_with_single_journal": 169,
+      "avg_journals_per_publisher": 5.1
+    }
+  },
+  "user": {
+    "query_patterns": {
+      "total_queries": 117,
+      "time_window_hours": 24,
+      "hourly_distribution": {
+        "9": 11,
+        "10": 7,
+        "11": 27,
+        "12": 50,
+        "13": 11,
+        "14": 11
+      },
+      "daily_distribution": {
+        "2025-11-08": 117
+      },
+      "peak_hour": {
+        "hour": 12,
+        "query_count": 50
+      },
+      "query_length_stats": {
+        "avg_length": 324.4188034188034,
+        "median_length": 210.0,
+        "min_length": 16,
+        "max_length": 656
+      },
+      "queries_per_day": 117.0
+    },
+    "popular_journals": {
+      "top_journals": [
+        {
+          "journal_name": "Journal of Machine Learning Research",
+          "publisher": "MIT Press",
+          "is_open_access": true,
+          "recommendation_count": 60,
+          "avg_similarity_score": 0.352
+        },
+        {
+          "journal_name": "Data Planet",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 36,
+          "avg_similarity_score": 0.214
+        },
+        {
+          "journal_name": "ENCODE Datasets",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 30,
+          "avg_similarity_score": 0.235
+        },
+        {
+          "journal_name": "IGSN ID registration for Geoscience SAMPLES data",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 28,
+          "avg_similarity_score": 0.14
+        },
+        {
+          "journal_name": "Barcode of Life Data Systems",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 26,
+          "avg_similarity_score": 0.145
+        },
+        {
+          "journal_name": "The Cambridge Structural Database",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 25,
+          "avg_similarity_score": 0.164
+        },
+        {
+          "journal_name": "Imperial College Research Computing Service Data Repository",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 23,
+          "avg_similarity_score": 0.15
+        },
+        {
+          "journal_name": "DataverseNO",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 22,
+          "avg_similarity_score": 0.158
+        },
+        {
+          "journal_name": "Nature Machine Intelligence",
+          "publisher": "Nature Publishing Group",
+          "is_open_access": false,
+          "recommendation_count": 21,
+          "avg_similarity_score": 0.232
+        },
+        {
+          "journal_name": "NRCT Data Center",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 21,
+          "avg_similarity_score": 0.155
+        },
+        {
+          "journal_name": "Artificial Intelligence",
+          "publisher": "Elsevier",
+          "is_open_access": false,
+          "recommendation_count": 20,
+          "avg_similarity_score": 0.179
+        },
+        {
+          "journal_name": "Legacy IGSN ID re-registration for Geoscience Australia SAMPLES data",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 20,
+          "avg_similarity_score": 0.148
+        },
+        {
+          "journal_name": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+          "publisher": "IEEE",
+          "is_open_access": false,
+          "recommendation_count": 19,
+          "avg_similarity_score": 0.195
+        },
+        {
+          "journal_name": "Genebank Information System of the IPK Gatersleben",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 18,
+          "avg_similarity_score": 0.234
+        },
+        {
+          "journal_name": "Data Archiving and Networked Services (DANS)",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 17,
+          "avg_similarity_score": 0.174
+        },
+        {
+          "journal_name": "Deep Blue (University of Michigan)",
+          "publisher": "Unknown",
+          "is_open_access": true,
+          "recommendation_count": 17,
+          "avg_similarity_score": 0.136
+        },
+        {
+          "journal_name": "Archaeology Data Service",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 17,
+          "avg_similarity_score": 0.169
+        },
+        {
+          "journal_name": "Harvard Dataverse",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 16,
+          "avg_similarity_score": 0.171
+        },
+        {
+          "journal_name": "Open Science Framework",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 16,
+          "avg_similarity_score": 0.249
+        },
+        {
+          "journal_name": "PsycEXTRA Dataset",
+          "publisher": "Unknown",
+          "is_open_access": false,
+          "recommendation_count": 15,
+          "avg_similarity_score": 0.144
+        }
+      ],
+      "time_window_hours": 24,
+      "total_unique_journals_recommended": 20
+    },
+    "topic_trends": {
+      "top_keywords": {
+        "learning": 105,
+        "privacy": 60,
+        "data": 57,
+        "machine": 56,
+        "study": 48,
+        "using": 47,
+        "based": 44,
+        "model": 40,
+        "approach": 37,
+        "research": 36,
+        "results": 35,
+        "prediction": 34,
+        "protein": 30,
+        "accuracy": 30,
+        "existing": 30,
+        "deep": 28,
+        "evolutionary": 28,
+        "transformer": 28,
+        "datasets": 28,
+        "ensemble": 28,
+        "minority": 28,
+        "class": 28,
+        "method": 27,
+        "models": 27,
+        "across": 26,
+        "information": 24,
+        "benchmark": 24,
+        "testing": 24,
+        "natural": 24,
+        "language": 24
+      },
+      "top_subjects": {
+        "Genomics and Phylogenetic Studies": 170,
+        "Mycorrhizal Fungi and Plant Interactions": 131,
+        "Plant Pathogens and Fungal Diseases": 127,
+        "Geochemistry and Geologic Mapping": 98,
+        "Geological Modeling and Analysis": 69,
+        "Legal and Regulatory Analysis": 63,
+        "Genetic diversity and population structure": 63,
+        "Diverse Scientific and Economic Studies": 62,
+        "Magnetic confinement fusion research": 52,
+        "Microbial Natural Products and Biosynthesis": 50,
+        "Geological and Geophysical Studies": 49,
+        "Image Processing and 3D Reconstruction": 48,
+        "Research Data Management Practices": 48,
+        "Nuclear Physics and Applications": 47,
+        "Particle accelerators and beam dynamics": 43,
+        "Energy and Environment Impacts": 40,
+        "Species Distribution and Climate Change": 38,
+        "Wheat and Barley Genetics and Pathology": 37,
+        "History of Computing Technologies": 36,
+        "Electrical and Electromagnetic Research": 36
+      },
+      "total_queries_analyzed": 117,
+      "time_window_hours": 24
+    },
+    "interaction_patterns": {
+      "total_sessions": 147,
+      "total_queries": 147,
+      "session_stats": {
+        "avg_queries_per_session": 1.0,
+        "median_queries_per_session": 1.0,
+        "max_queries_per_session": 1,
+        "single_query_sessions": 147
+      },
+      "recommendation_stats": {
+        "avg_recommendations_per_query": 7.43,
+        "median_recommendations_per_query": 5.0
+      },
+      "user_retention": {
+        "multi_query_sessions": 0,
+        "multi_query_session_percentage": 0.0
+      }
+    },
+    "open_access_preference": {
+      "open_access_recommendation_rate": 18.28,
+      "open_access_availability_rate": 24.72,
+      "oa_recommended": 147,
+      "total_recommended": 804,
+      "time_window_hours": 24
+    }
+  }
+}

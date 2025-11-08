@@ -1,0 +1,25 @@
+============================================================
+JOURNAL RECOMMENDATION SYSTEM - METRICS SUMMARY
+============================================================
+Generated: 2025-11-08T16:47:57.022421
+
+SYSTEM HEALTH
+------------------------------------------------------------
+Status: HEALTHY
+Health Score: 100.0/100
+Total Journals: 1776
+Vector Coverage: 100.0%
+
+PERFORMANCE (Last 24 Hours)
+------------------------------------------------------------
+Total Queries: 117
+Avg Response Time: 0.00 ms
+P95 Response Time: 0.00 ms
+Throughput: 4.88 queries/hour
+
+ACCURACY
+------------------------------------------------------------
+Avg Similarity Score: 0.210
+Median Similarity Score: 0.189
+High Quality Recs (>0.7): 0
+============================================================
