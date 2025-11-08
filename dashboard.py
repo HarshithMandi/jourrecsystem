@@ -634,7 +634,7 @@ def main():
                         tab1, tab2, tab3, tab4 = st.tabs(["Combined", "TF-IDF Only", "BERT Only", "Comparison"])
                         
                         with tab1:
-                            st.markdown("**Combined Similarity (30% TF-IDF + 70% BERT)**")
+                            st.markdown("**Combined Similarity (50% BERT + 20% TF-IDF + 10% Title + 10% Keywords + 5% Impact + 5% Field)**")##this one
                             df = pd.DataFrame(recommendations['recommendations'])
                             df['Rank'] = range(1, len(df) + 1)
                             
@@ -1352,7 +1352,7 @@ def main():
             **Machine Learning Components:**
             - TF-IDF Vectorization for keyword frequency analysis
             - BERT Transformers (all-MiniLM-L6-v2) for semantic understanding
-            - Hybrid scoring algorithm (30% TF-IDF + 70% BERT)
+            - Hybrid scoring algorithm (50% BERT + 20% TF-IDF + 10% Title + 10% Keywords + 5% Impact + 5% Field)
             - Cosine similarity for relevance calculation
 
             **Backend Infrastructure:**
@@ -1423,7 +1423,7 @@ def main():
             **ML Model Parameters:**
             - TF-IDF Features: 20,000
             - BERT Model: all-MiniLM-L6-v2
-            - Similarity Weights: 30% TF-IDF, 70% BERT
+            - Similarity Weights: 50% BERT, 20% TF-IDF, 10% Title, 10% Keywords, 5% Impact, 5% Field
             - Vector Dimensions: 384 (BERT)
 
             #### System Requirements
