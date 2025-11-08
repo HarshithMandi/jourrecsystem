@@ -55,6 +55,57 @@ Once running, the API will be available at `http://localhost:8000`
 | `/api/recommend` | POST | Get journal recommendations |
 | `/api/batch-recommend` | POST | Batch recommendations |
 | `/api/stats` | GET | Database statistics |
+| `/api/recommend-detailed` | POST | Detailed similarity components |
+| `/api/compare-all-recommenders` | POST | Compare original/enhanced/advanced |
+
+## Integrating Open Journal Systems (OJS)
+
+You can augment the journal database with content from an Open Journal Systems
+instance using its OAI-PMH interface. This increases coverage and can improve
+recommendation relevance for niche domains.
+
+### 1. Set Environment Variables
+
+Add these to your `.env` (or set in shell):
+
+```
+OJS_OAI_URL=https://your-ojs-host/index.php/index/oai
+OJS_MAX_JOURNALS=50         # optional (default 50)
+OJS_MAX_WORKS=30            # optional (default 30 per journal)
+```
+
+### 2. Run Ingestion
+
+```bash
+python scripts/ingest_ojs.py --max-journals 40 --max-works 25
+```
+
+This will:
+- List OAI-PMH sets (each representing a journal)
+- Insert journals with `source_type='openalex'` or `'ojs'` (synthetic IDs like `ojs:<setSpec>`)
+- Fetch up to N article records per journal (metadataPrefix `oai_dc`)
+
+### 3. Rebuild Vectors (Optional but Recommended)
+
+After adding many new journals and works, rebuild ML vectors:
+
+```bash
+python scripts/build_vectors.py
+```
+
+### 4. Verify
+
+```bash
+python test_api.py
+```
+
+### Notes & Limits
+- OJS OAI endpoints may throttle; the script sleeps between requests.
+- Only basic Dublin Core fields are ingested (title, description, date, subjects).
+- Works without abstracts are stored with null `abstract`.
+- If you later add a REST API key, you can extend the script to fetch richer metadata.
+
+---
 
 ## API Usage Examples
 

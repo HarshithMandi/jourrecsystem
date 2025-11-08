@@ -7,7 +7,9 @@ from app.models.base import Base
 class Journal(Base):
     __tablename__ = "journals"
     id = Column(Integer, primary_key=True)
-    openalex_id = Column(String(64), unique=True, index=True, nullable=False)
+    openalex_id = Column(String(64), unique=True, index=True, nullable=False)  # For OpenAlex or synthetic IDs (e.g., ojs:<setSpec>)
+    source_type = Column(String(32), index=True, default="openalex")          # 'openalex' | 'ojs' | 'manual'
+    external_id = Column(String(128), index=True)                              # Raw external identifier (OJS setSpec, etc.)
     name = Column(String(512), nullable=False)
     display_name = Column(String(512))
     issn = Column(String(32), index=True)

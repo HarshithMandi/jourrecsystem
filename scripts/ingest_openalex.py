@@ -24,20 +24,42 @@ def ingest_journals(cursor=None, per_page=200):
     data = response.json()
     
     session = SessionLocal()
+    
+    # PERFORMANCE FIX: Fetch all existing journal IDs at once instead of querying one by one
+    results = data.get("results", [])
+    openalex_ids = [src["id"].split("/")[-1] for src in results]
+    existing_journals = session.query(Journal).filter(Journal.openalex_id.in_(openalex_ids)).all()
+    existing_map = {j.openalex_id: j for j in existing_journals}
+    
     count = 0
     
-    for src in data.get("results", []):
+    for src in results:
         try:
-            journal = Journal(
-                openalex_id=src["id"].split("/")[-1],
-                name=src["display_name"],
-                display_name=src["display_name"],
-                issn=src.get("issn_l"),
-                is_open_access=src.get("is_oa", False),
-                publisher=src.get("publisher"),
-                subjects=json.dumps(src.get("topics", []))  # Store as JSON string
-            )
-            session.merge(journal)
+            openalex_id = src["id"].split("/")[-1]
+            
+            # Check if journal already exists using the pre-loaded map
+            if openalex_id in existing_map:
+                # Update existing journal
+                existing = existing_map[openalex_id]
+                existing.name = src["display_name"]
+                existing.display_name = src["display_name"]
+                existing.issn = src.get("issn_l")
+                existing.is_open_access = src.get("is_oa", False)
+                existing.publisher = src.get("publisher")
+                existing.subjects = json.dumps(src.get("topics", []))
+            else:
+                # Create new journal
+                journal = Journal(
+                    openalex_id=openalex_id,
+                    source_type="openalex",
+                    name=src["display_name"],
+                    display_name=src["display_name"],
+                    issn=src.get("issn_l"),
+                    is_open_access=src.get("is_oa", False),
+                    publisher=src.get("publisher"),
+                    subjects=json.dumps(src.get("topics", []))
+                )
+                session.add(journal)
             count += 1
         except Exception as e:
             print(f"Error processing journal {src.get('display_name', 'Unknown')}: {e}")
@@ -106,11 +128,11 @@ if __name__ == "__main__":
     # Ingest journals first
     cursor = None
     page = 1
-    max_pages = 3  # Limit to prevent too much data for testing
+    max_pages = 25  # Increased to ingest ~5000 journals (200 per page)
     
     print(f"Ingesting journals (max {max_pages} pages)...")
     while page <= max_pages:
-        print(f"Processing page {page}/{max_pages}")
+        print(f"Processing page {page}/{max_pages}", end=" ... ", flush=True)
         try:
             new_cursor = ingest_journals(cursor)
             if new_cursor is None:
@@ -118,7 +140,7 @@ if __name__ == "__main__":
                 break
             cursor = new_cursor
             page += 1
-            time.sleep(1)  # Be polite to the API
+            time.sleep(0.2)  # Reduced from 1s to 0.2s for faster processing
         except Exception as e:
             print(f"Error during ingestion: {e}")
             break
