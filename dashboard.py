@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Journal Recommender System - Professional Dashboard
+ResearchBridge - Professional Dashboard
 Advanced machine learning platform for academic journal recommendations
 """
 
@@ -15,8 +15,8 @@ import time
 
 # Configure page
 st.set_page_config(
-    page_title="Journal Recommender System",
-    page_icon="🎯",
+    page_title="ResearchBridge - Intelligent Journal Recommendations",
+    page_icon="🔬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -138,31 +138,34 @@ def main():
     st.markdown("""
     <style>
     .main-header {
-        background: linear-gradient(90deg, #1f77b4 0%, #2ca02c 100%);
-        padding: 2rem 1rem;
-        border-radius: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2.5rem 1rem;
+        border-radius: 15px;
         margin-bottom: 2rem;
         text-align: center;
         color: white;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
     }
     .main-header h1 {
         margin: 0;
-        font-size: 2.5rem;
-        font-weight: 600;
+        font-size: 3rem;
+        font-weight: 700;
         color: white !important;
+        letter-spacing: -1px;
     }
     .main-header p {
         margin: 0.5rem 0 0 0;
-        font-size: 1.1rem;
-        opacity: 0.9;
+        font-size: 1.2rem;
+        opacity: 0.95;
         color: white !important;
+        font-weight: 300;
     }
     .status-card {
-        padding: 1rem;
-        border-radius: 8px;
+        padding: 1.2rem;
+        border-radius: 10px;
         margin: 1rem 0;
-        border-left: 4px solid;
+        border-left: 5px solid;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     .status-success {
         background-color: #d4edda;
@@ -180,22 +183,22 @@ def main():
     }
     .metric-card {
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border-left: 5px solid #1f77b4;
+        padding: 1.8rem;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+        border-left: 6px solid #667eea;
         color: #333333;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: all 0.3s ease;
         margin-bottom: 1rem;
     }
     .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(102, 126, 234, 0.25);
     }
     .metric-card h3 {
-        color: #1f77b4;
+        color: #667eea;
         margin: 0 0 0.5rem 0;
-        font-size: 2.2rem;
+        font-size: 2.5rem;
         font-weight: 700;
         line-height: 1;
     }
@@ -213,8 +216,8 @@ def main():
     # Header
     st.markdown("""
     <div class="main-header">
-        <h1>Journal Recommender System</h1>
-        <p>Advanced ML-Powered Academic Journal Matching Platform</p>
+        <h1>🔬 ResearchBridge</h1>
+        <p>Connecting Researchers to the Perfect Publishing Venue</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -242,39 +245,44 @@ def main():
 
     # Professional sidebar
     with st.sidebar:
-        st.markdown("### Navigation")
+        st.markdown("### 🔬 ResearchBridge")
+        st.markdown("*Connecting Research to Publishing*")
+        st.divider()
+        
+        st.markdown("#### Navigation")
         
         # Main navigation with icons
         page = st.selectbox(
             "Select Module:",
             [
-                "Dashboard Overview", 
-                "Single Recommendation", 
-                "Batch Processing", 
-                "Advanced Analysis", 
-                "System Statistics", 
-                "Documentation"
+                "🏠 Dashboard Overview", 
+                "🎯 Single Recommendation", 
+                "📊 Batch Processing", 
+                "🧠 Advanced Analysis", 
+                "📈 System Statistics", 
+                "📚 Documentation"
             ]
         )    # Dashboard Overview
-    if page == "Dashboard Overview":
+    if page == "🏠 Dashboard Overview":
         # Professional overview layout
-        st.markdown("### System Overview")
+        st.markdown("### 🏠 Platform Overview")
         
         col1, col2 = st.columns([2, 1])
 
         with col1:
             st.markdown("""
-            **Advanced Academic Journal Recommendation Platform**
+            **Intelligent Academic Publishing Guidance**
             
-            Our machine learning-powered system analyzes research abstracts to provide 
-            highly accurate journal recommendations using state-of-the-art NLP techniques.
+            ResearchBridge leverages cutting-edge machine learning and natural language processing 
+            to match your research with the most suitable academic journals, streamlining the 
+            publication process and maximizing your research impact.
             
-            **Core Capabilities:**
-            - Single abstract analysis with detailed similarity scoring
-            - Batch processing for multiple research papers
-            - Advanced analytics with TF-IDF and BERT embeddings
-            - Real-time performance monitoring and statistics
-            - Comprehensive ranking comparisons across methodologies
+            **Key Features:**
+            - 🎯 Single abstract analysis with detailed similarity scoring
+            - 📊 Batch processing for multiple research papers
+            - 🧠 Advanced analytics combining TF-IDF and BERT embeddings
+            - 📈 Real-time performance monitoring and statistics
+            - 🔄 Comprehensive ranking comparisons across methodologies
             """)
             
         # Performance metrics
@@ -332,8 +340,8 @@ def main():
             st.markdown("- API Server: Online")
             st.markdown("- Database: Connected")
             st.markdown("- ML Models: Loaded")    # Single Recommendation Page
-    elif page == "Single Recommendation":
-        st.markdown("### Single Abstract Analysis")
+    elif page == "🎯 Single Recommendation":
+        st.markdown("### 🎯 Single Abstract Analysis")
         st.markdown("Generate personalized journal recommendations from research abstracts using advanced ML algorithms.")
         
         # Input section
@@ -433,8 +441,8 @@ def main():
                     st.success("Abstract meets all requirements. Ready to get recommendations!")
     
     # Batch Processing Page  
-    elif page == "Batch Processing":
-        st.markdown("### Batch Analysis Module")
+    elif page == "📊 Batch Processing":
+        st.markdown("### 📊 Batch Analysis Module")
         st.markdown("Process multiple research abstracts simultaneously for comprehensive comparative analysis and reporting.")
         
         # Input methods
@@ -583,8 +591,8 @@ def main():
             st.info("Please enter or upload abstracts to begin batch analysis.")
     
     # Advanced Analysis Page
-    elif page == "Advanced Analysis":
-        st.header("Advanced Similarity Analysis")
+    elif page == "🧠 Advanced Analysis":
+        st.header("🧠 Advanced Similarity Analysis")
         st.markdown("Deep dive into similarity scores, ranking comparisons, and text distribution analysis.")
         
         abstract = st.text_area("Enter abstract for detailed analysis:", height=150)
@@ -1195,8 +1203,8 @@ def main():
                                 """)
     
     # System Statistics Page
-    elif page == "System Statistics":
-        st.markdown("### System Analytics Dashboard")
+    elif page == "📈 System Statistics":
+        st.markdown("### 📈 System Analytics Dashboard")
         st.markdown("Comprehensive insights into database performance, system metrics, and operational statistics.")
         
         # Get statistics
@@ -1298,36 +1306,37 @@ def main():
             st.error(f"Could not fetch statistics: {stats['error']}")
     
     # Documentation Page
-    elif page == "Documentation":
-        st.markdown("### System Documentation")
-        st.markdown("Technical specifications, methodology overview, and system architecture details.")
+    elif page == "📚 Documentation":
+        st.markdown("### 📚 Platform Documentation")
+        st.markdown("Technical specifications, methodology overview, and system architecture for ResearchBridge.")
         
         col1, col2 = st.columns([2, 1])
         
         with col1:
             st.markdown("""
             #### System Overview
-            An advanced machine learning platform designed to analyze research abstracts 
-            and provide accurate academic journal recommendations through hybrid AI methodologies.
+            ResearchBridge is an advanced machine learning platform designed to analyze research abstracts 
+            and connect researchers with optimal publishing venues through hybrid AI methodologies.
 
             #### Technical Architecture
             
             **Machine Learning Components:**
             - TF-IDF Vectorization for keyword frequency analysis
-            - BERT Transformers for semantic understanding
+            - BERT Transformers (all-MiniLM-L6-v2) for semantic understanding
             - Hybrid scoring algorithm (30% TF-IDF + 70% BERT)
             - Cosine similarity for relevance calculation
 
             **Backend Infrastructure:**
             - FastAPI RESTful API framework
-            - SQLite relational database
+            - SQLite relational database with 353+ journals
             - scikit-learn ML toolkit
             - sentence-transformers library
+            - OpenAlex API integration for journal data
 
             **Frontend Technology:**
-            - Streamlit web interface
+            - Streamlit web interface with modern Material Design
             - Plotly interactive visualizations
-            - Responsive design components
+            - Responsive design components with gradient themes
 
             #### Core Capabilities
             
@@ -1395,10 +1404,11 @@ def main():
             - Network: API connectivity required
 
             #### Version Information
-            - Platform Version: 2.0.0
-            - Last Updated: October 2024
+            - Platform: ResearchBridge v2.5.0
+            - Last Updated: December 2024
             - API Version: 1.0
-            - Database Schema: v2.1
+            - Database: 353 journals, Schema v2.1
+            - ML Models: TF-IDF + BERT (all-MiniLM-L6-v2)
             """)
 
 if __name__ == "__main__":

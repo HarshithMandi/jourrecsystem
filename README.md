@@ -1,4 +1,4 @@
-# Journal Recommender System
+# ResearchBridge
 
 A comprehensive machine learning-powered system that recommends academic journals based on research abstracts using hybrid TF-IDF and BERT embeddings. Features both a REST API and an interactive Streamlit dashboard.
 
