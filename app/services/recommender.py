@@ -7,7 +7,8 @@ from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # load models once
-bert = SentenceTransformer("all-MiniLM-L6-v2")
+bert_general = SentenceTransformer("all-MiniLM-L6-v2")  # General purpose, 384 dimensions
+# Note: SciBERT removed for now - database vectors are 384-dim only
 tfidf = TfidfVectorizer(max_features=20_000, stop_words="english")
 
 # Initialize TF-IDF using the SAME corpus format as build_vectors.py
@@ -32,17 +33,105 @@ except Exception as e:
 finally:
     _session.close()
 
+def extract_keywords(text: str, top_n: int = 10):
+    """Extract top keywords from text using TF-IDF"""
+    vec_tfidf_sparse = tfidf.transform([text])
+    feature_names = tfidf.get_feature_names_out()
+    vec_tfidf = vec_tfidf_sparse.toarray()[0]
+    
+    # Get top N keywords
+    top_indices = vec_tfidf.argsort()[-top_n:][::-1]
+    keywords = [feature_names[i] for i in top_indices if vec_tfidf[i] > 0]
+    return keywords
+
+def calculate_keyword_similarity(abstract_keywords, journal_text):
+    """Calculate keyword overlap between abstract and journal"""
+    journal_text_lower = journal_text.lower()
+    matches = sum(1 for keyword in abstract_keywords if keyword.lower() in journal_text_lower)
+    if len(abstract_keywords) == 0:
+        return 0.0
+    return matches / len(abstract_keywords)
+
+def calculate_title_similarity(vec_abstract_encoded, journal_name: str):
+    """Calculate similarity between abstract and journal title using pre-encoded abstract vector"""
+    try:
+        # Encode journal title only (abstract is already encoded)
+        vec_title = bert_general.encode([journal_name])[0]
+        
+        norm_a = np.linalg.norm(vec_abstract_encoded)
+        norm_b = np.linalg.norm(vec_title)
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return np.dot(vec_abstract_encoded, vec_title) / (norm_a * norm_b)
+    except:
+        return 0.0
+
+def normalize_impact_factor(impact_factor, max_impact=100.0):
+    """Normalize impact factor to 0-1 range"""
+    if impact_factor is None or impact_factor <= 0:
+        return 0.0
+    return min(impact_factor / max_impact, 1.0)
+
+def calculate_field_matching(abstract_keywords, journal_subjects):
+    """Calculate field/subject matching score"""
+    if not journal_subjects or len(abstract_keywords) == 0:
+        return 0.0
+    
+    # Extract display names from subject dicts (subjects is a list of dicts)
+    try:
+        if isinstance(journal_subjects, list) and len(journal_subjects) > 0:
+            if isinstance(journal_subjects[0], dict):
+                # Extract display_name from dict objects
+                subject_names = [subj.get('display_name', '') for subj in journal_subjects if subj.get('display_name')]
+            else:
+                # Assume they're strings
+                subject_names = [str(subj) for subj in journal_subjects]
+        else:
+            return 0.0
+    except:
+        return 0.0
+    
+    if not subject_names:
+        return 0.0
+    
+    # Convert both to lowercase for matching
+    abstract_kw_lower = [kw.lower() for kw in abstract_keywords]
+    journal_subj_lower = [subj.lower() for subj in subject_names]
+    
+    # Check for keyword-subject matches
+    matches = 0
+    for kw in abstract_kw_lower:
+        for subj in journal_subj_lower:
+            if kw in subj or subj in kw:
+                matches += 1
+                break
+    
+    return min(matches / len(abstract_keywords), 1.0)
+
 def rank_journals(abstract: str, top_k: int = settings.TOP_K):
     db = SessionLocal()
 
-    # encode query
+    # Extract keywords from abstract
+    abstract_keywords = extract_keywords(abstract, top_n=10)
+    
+    # encode query (removed SciBERT - vectors are 384-dim only)
     vec_tfidf_sparse = tfidf.transform([abstract])
     vec_tfidf = np.array(vec_tfidf_sparse.todense()).flatten()  # Convert sparse to dense properly
-    vec_bert = bert.encode([abstract])[0]
+    vec_bert_general = bert_general.encode([abstract])[0]
+    
+    # Pre-encode abstract for title similarity (encode once instead of 353 times!)
+    vec_abstract_for_title = bert_general.encode([abstract[:200]])[0]  # Use first 200 chars for title matching
 
     # fetch candidates
     journals = db.query(Journal).join(JournalProfile).all()
+    
+    # Batch encode all journal titles at once (MUCH faster than one-by-one)
+    journal_names = [j.name for j in journals if j.profile and j.profile.tfidf_vector and j.profile.bert_vector]
+    journal_title_vectors = bert_general.encode(journal_names) if journal_names else []
+    
     sims = []
+    title_vec_idx = 0
+    
     for j in journals:
         p = j.profile
         if not p or not p.tfidf_vector or not p.bert_vector:
@@ -60,21 +149,52 @@ def rank_journals(abstract: str, top_k: int = settings.TOP_K):
                     return 0.0  # Return 0 similarity for zero vectors
                 return np.dot(a, b) / (norm_a * norm_b)
             
+            # Component 1 & 2: General BERT similarity (stored vectors are 384-dim general BERT)
+            sim_bert_general = cosine_sim(vec_bert_general, v_bert)
+            sim_bert_scientific = sim_bert_general  # Same as general for now (no SciBERT vectors stored)
+            
+            # Component 3: TF-IDF similarity
             sim_tfidf = cosine_sim(vec_tfidf, v_tfidf)
-            sim_bert = cosine_sim(vec_bert, v_bert)
-            # Weighted combination: 30% TF-IDF + 70% BERT for better semantic matching
-            sim_combined = 0.3 * sim_tfidf + 0.7 * sim_bert
+            
+            # Component 4: Title similarity (using pre-encoded vectors)
+            sim_title = cosine_sim(vec_abstract_for_title, journal_title_vectors[title_vec_idx])
+            title_vec_idx += 1
+            
+            # Component 5: Keyword similarity
+            journal_text = f"{j.name} {j.display_name or ''} {j.publisher or ''}"
+            sim_keyword = calculate_keyword_similarity(abstract_keywords, journal_text)
+            
+            # Component 6: Impact factor boost (normalized)
+            impact_boost = normalize_impact_factor(j.impact_factor)
+            
+            # Component 7: Field matching boost
+            journal_subjects = json.loads(j.subjects) if j.subjects and j.subjects.strip() else []
+            field_boost = calculate_field_matching(abstract_keywords, journal_subjects)
+            
+            # SIMPLIFIED COMBINED SCORE (SciBERT removed until we rebuild vectors with 768-dim)
+            # Using higher weight for general BERT since it's the only real BERT score
+            sim_combined = (
+                0.50 * sim_bert_general +    # Doubled from 0.25 (no SciBERT)
+                0.20 * sim_tfidf +
+                0.10 * sim_title +
+                0.10 * sim_keyword +
+                0.05 * impact_boost +
+                0.05 * field_boost
+            )
             
             # Ensure similarities are valid numbers
             if np.isnan(sim_tfidf) or np.isinf(sim_tfidf):
                 sim_tfidf = 0.0
-            if np.isnan(sim_bert) or np.isinf(sim_bert):
-                sim_bert = 0.0
+            if np.isnan(sim_bert_general) or np.isinf(sim_bert_general):
+                sim_bert_general = 0.0
+            if np.isnan(sim_bert_scientific) or np.isinf(sim_bert_scientific):
+                sim_bert_scientific = 0.0
             if np.isnan(sim_combined) or np.isinf(sim_combined):
                 sim_combined = 0.0
             
             # Store detailed similarity information
-            sims.append((j, sim_combined, sim_tfidf, sim_bert))
+            sims.append((j, sim_combined, sim_tfidf, sim_bert_general, sim_bert_scientific, 
+                        sim_title, sim_keyword, impact_boost, field_boost))
         except (json.JSONDecodeError, ValueError, ZeroDivisionError) as e:
             print(f"Warning: Could not parse vectors for journal {j.name}: {e}")
             continue
@@ -83,13 +203,13 @@ def rank_journals(abstract: str, top_k: int = settings.TOP_K):
     ranked = sims[:top_k]
 
     # audit trail
-    q = QueryRun(query_text=abstract, model_used="ensemble")
+    q = QueryRun(query_text=abstract, model_used="advanced_ensemble")
     db.add(q)
     
     try:
         db.commit()
         
-        for rank, (j, score, _, _) in enumerate(ranked, 1):
+        for rank, (j, score, _, _, _, _, _, _, _) in enumerate(ranked, 1):
             # Ensure score is a valid float before inserting
             if np.isnan(score) or np.isinf(score):
                 score = 0.0
@@ -102,17 +222,23 @@ def rank_journals(abstract: str, top_k: int = settings.TOP_K):
         # Continue with results even if audit fails
         pass
 
-    # Create detailed results with all similarity scores
+    # Create detailed results with all similarity scores and components
     results = []
-    for j, sim_combined, sim_tfidf, sim_bert in ranked:
+    for j, sim_combined, sim_tfidf, sim_bert_gen, sim_bert_sci, sim_title, sim_keyword, impact_boost, field_boost in ranked:
         result = {
             "journal_name": j.name,
             "display_name": j.display_name or j.name,
-            "similarity_combined": round(sim_combined, 4),
-            "similarity_tfidf": round(sim_tfidf, 4),
-            "similarity_bert": round(sim_bert, 4),
-            "impact_factor": j.impact_factor or 0.0,
-            "is_open_access": j.is_open_access,
+            "similarity_combined": round(float(sim_combined), 4),
+            "similarity_tfidf": round(float(sim_tfidf), 4),
+            "similarity_bert": round(float((sim_bert_gen + sim_bert_sci) / 2), 4),  # Average BERT for backward compatibility
+            "similarity_bert_general": round(float(sim_bert_gen), 4),
+            "similarity_bert_scientific": round(float(sim_bert_sci), 4),
+            "similarity_title": round(float(sim_title), 4),
+            "similarity_keyword": round(float(sim_keyword), 4),
+            "impact_factor_boost": round(float(impact_boost), 4),
+            "field_matching_boost": round(float(field_boost), 4),
+            "impact_factor": float(j.impact_factor) if j.impact_factor else 0.0,
+            "is_open_access": bool(j.is_open_access),
             "publisher": j.publisher or "Unknown",
             "issn": j.issn,
             "eissn": j.eissn,
@@ -141,8 +267,8 @@ def get_ranking_comparisons(abstract: str, top_k: int = settings.TOP_K):
         impact_results.append({
             "journal_name": j.name,
             "display_name": j.display_name or j.name,
-            "impact_factor": j.impact_factor,
-            "is_open_access": j.is_open_access,
+            "impact_factor": float(j.impact_factor),
+            "is_open_access": bool(j.is_open_access),
             "publisher": j.publisher or "Unknown",
             "subjects": []  # Simplified for now
         })
@@ -209,9 +335,9 @@ def rank_by_tfidf_only(abstract: str, top_k: int, db=None):
         results.append({
             "journal_name": j.name,
             "display_name": j.display_name or j.name,
-            "similarity_tfidf": round(score, 4),
-            "impact_factor": j.impact_factor or 0.0,
-            "is_open_access": j.is_open_access,
+            "similarity_tfidf": round(float(score), 4),
+            "impact_factor": float(j.impact_factor) if j.impact_factor else 0.0,
+            "is_open_access": bool(j.is_open_access),
             "publisher": j.publisher or "Unknown"
         })
     
@@ -222,15 +348,15 @@ def rank_by_tfidf_only(abstract: str, top_k: int, db=None):
 
 
 def rank_by_bert_only(abstract: str, top_k: int, db=None):
-    """Rank journals using only BERT similarity"""
+    """Rank journals using only BERT similarity (using general BERT model)"""
     if db is None:
         db = SessionLocal()
         close_db = True
     else:
         close_db = False
     
-    # encode query
-    vec_bert = bert.encode([abstract])[0]
+    # encode query using general BERT
+    vec_bert = bert_general.encode([abstract])[0]
 
     journals = db.query(Journal).join(JournalProfile).all()
     sims = []
@@ -267,9 +393,9 @@ def rank_by_bert_only(abstract: str, top_k: int, db=None):
         results.append({
             "journal_name": j.name,
             "display_name": j.display_name or j.name,
-            "similarity_bert": round(score, 4),
-            "impact_factor": j.impact_factor or 0.0,
-            "is_open_access": j.is_open_access,
+            "similarity_bert": round(float(score), 4),
+            "impact_factor": float(j.impact_factor) if j.impact_factor else 0.0,
+            "is_open_access": bool(j.is_open_access),
             "publisher": j.publisher or "Unknown"
         })
     
@@ -297,7 +423,7 @@ def analyze_text_distribution(abstract: str):
     # Get TF-IDF and BERT representations
     vec_tfidf_sparse = tfidf.transform([abstract])
     vec_tfidf = np.array(vec_tfidf_sparse.todense()).flatten()
-    vec_bert = bert.encode([abstract])
+    vec_bert = bert_general.encode([abstract])  # Use general BERT
     
     return {
         "word_frequency": dict(word_freq.most_common(20)),

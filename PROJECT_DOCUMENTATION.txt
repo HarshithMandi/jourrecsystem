@@ -15,22 +15,57 @@ contextually relevant journal recommendations.
 CORE TECHNOLOGY
 ===============
 
-The system employs a hybrid approach combining two powerful machine learning 
-techniques:
+The system employs an advanced multi-component approach combining six powerful 
+machine learning techniques for highly accurate journal recommendations:
 
-1. TF-IDF (Term Frequency-Inverse Document Frequency)
-   - Analyzes keyword relevance and term importance
-   - Weight: 30% of final similarity score
-   - Provides strong lexical matching capabilities
+SCORING COMPONENTS:
 
-2. BERT Embeddings (Bidirectional Encoder Representations from Transformers)
-   - Captures semantic meaning and context
-   - Weight: 70% of final similarity score
-   - Uses 'all-MiniLM-L6-v2' model for efficient CPU-friendly processing
-   - Enables deep understanding of research content
+1. General BERT Embeddings (50% weight)
+   - Model: all-MiniLM-L6-v2 (384 dimensions)
+   - Purpose: Semantic understanding and contextual analysis
+   - Captures deep semantic meaning from abstracts
 
-This weighted combination ensures both keyword precision and semantic 
-understanding, resulting in highly relevant recommendations.
+2. TF-IDF Similarity (20% weight)
+   - Traditional keyword-based matching
+   - Identifies lexical overlap between abstract and journal profiles
+   - Fast and interpretable
+
+3. Title Similarity (10% weight)
+   - Matches abstract content against journal titles
+   - Helps identify domain-specific journals
+   - Uses BERT embeddings for semantic title matching
+
+4. Keyword Similarity (10% weight)
+   - Extracts top keywords from abstract using TF-IDF
+   - Measures keyword overlap with journal metadata
+   - Ensures topic relevance
+
+5. Impact Factor Boost (5% weight)
+   - Normalized impact factor (0-1 scale)
+   - Slight preference for high-impact journals
+   - Balanced to avoid bias toward prestigious journals only
+
+6. Field Matching Boost (5% weight)
+   - Matches abstract keywords with journal subject areas
+   - Ensures disciplinary alignment
+   - Helps filter cross-domain mismatches
+
+COMBINED SCORING FORMULA:
+
+Final Score = (
+    0.50 × bert_similarity +
+    0.20 × tfidf_similarity +
+    0.10 × title_similarity +
+    0.10 × keyword_similarity +
+    0.05 × impact_factor_boost +
+    0.05 × field_matching_boost
+)
+
+This weighted combination ensures semantic understanding, keyword precision,
+and quality considerations for optimal recommendations.
+
+Note: SciBERT (scientific BERT) support planned for future release - requires
+database schema upgrade to support dual vector dimensions (384 + 768).
 
 ARCHITECTURE
 ============

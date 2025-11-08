@@ -86,6 +86,7 @@ def get_database_stats():
     except Exception as e:
         return {"error": str(e)}
 
+@st.cache_data(ttl=300)  # Cache for 5 minutes
 def get_detailed_recommendations(abstract, top_k=10):
     """Get detailed recommendations with similarity breakdowns."""
     try:
@@ -101,6 +102,7 @@ def get_detailed_recommendations(abstract, top_k=10):
     except Exception as e:
         return {"error": str(e)}
 
+@st.cache_data(ttl=300)  # Cache for 5 minutes
 def get_ranking_comparisons(abstract, top_k=10):
     """Get ranking comparisons by different methods."""
     try:
@@ -116,6 +118,7 @@ def get_ranking_comparisons(abstract, top_k=10):
     except Exception as e:
         return {"error": str(e)}
 
+@st.cache_data(ttl=300)  # Cache for 5 minutes
 def analyze_text_distribution(abstract):
     """Get text analysis and distribution data."""
     try:
@@ -604,14 +607,29 @@ def main():
             analysis_type = st.selectbox("Analysis Type", ["All", "Similarity Breakdown", "Ranking Comparison", "Text Distribution"])
         
         if st.button("Run Advanced Analysis", disabled=len(abstract) < 50):
+            # Create a progress container
+            progress_text = st.empty()
+            progress_bar = st.progress(0)
+            
             with st.spinner("Running advanced analysis..."):
                 
                 # Similarity Score Breakdown
                 if analysis_type in ["All", "Similarity Breakdown"]:
+                    progress_text.text("📊 Loading similarity breakdown...")
+                    progress_bar.progress(10)
+                    
                     st.subheader("Similarity Score Breakdown")
                     
                     recommendations = get_detailed_recommendations(abstract, analysis_top_k)
-                    if "error" not in recommendations:
+                    progress_bar.progress(30)
+                    
+                    if "error" in recommendations:
+                        st.error(f"❌ Error loading similarity breakdown: {recommendations.get('error', 'Unknown error')}")
+                        st.info("💡 Make sure the API server is running and the abstract is at least 50 characters.")
+                    elif "recommendations" not in recommendations:
+                        st.error(f"❌ Unexpected response format. Keys: {list(recommendations.keys())}")
+                        st.json(recommendations)
+                    else:
                         # Create tabs for different similarity types
                         tab1, tab2, tab3, tab4 = st.tabs(["Combined", "TF-IDF Only", "BERT Only", "Comparison"])
                         
@@ -628,7 +646,7 @@ def main():
                             st.plotly_chart(fig, use_container_width=True)
                             
                             # Data table
-                            st.dataframe(df[['Rank', 'journal_name', 'similarity_combined', 'impact_factor', 'publisher']], 
+                            st.dataframe(df[['Rank', 'journal_name', 'similarity_combined']], 
                                        use_container_width=True)
                         
                         with tab2:
@@ -639,7 +657,7 @@ def main():
                             fig_tfidf.update_layout(xaxis_tickangle=45)
                             st.plotly_chart(fig_tfidf, use_container_width=True)
                             
-                            st.dataframe(df[['Rank', 'journal_name', 'similarity_tfidf', 'impact_factor']], 
+                            st.dataframe(df[['Rank', 'journal_name', 'similarity_tfidf']], 
                                        use_container_width=True)
                         
                         with tab3:
@@ -650,7 +668,7 @@ def main():
                             fig_bert.update_layout(xaxis_tickangle=45)
                             st.plotly_chart(fig_bert, use_container_width=True)
                             
-                            st.dataframe(df[['Rank', 'journal_name', 'similarity_bert', 'impact_factor']], 
+                            st.dataframe(df[['Rank', 'journal_name', 'similarity_bert']], 
                                        use_container_width=True)
                         
                         with tab4:
@@ -667,8 +685,7 @@ def main():
                                     corr_data.append({
                                         'Combined': row['similarity_combined'],
                                         'TF-IDF': row['similarity_tfidf'],
-                                        'BERT': row['similarity_bert'],
-                                        'Impact Factor': (row['impact_factor'] / 100) if row['impact_factor'] else 0  # Normalize for visualization
+                                        'BERT': row['similarity_bert']
                                     })
                                 
                                 corr_df = pd.DataFrame(corr_data)
@@ -749,35 +766,29 @@ def main():
                                 """)
                             
                             with heatmap_tab3:
-                                st.markdown("**Performance vs Impact Factor Matrix**")
+                                st.markdown("**Similarity Methods Performance Comparison**")
                                 
-                                # Create performance matrix heatmap
-                                performance_data = []
+                                # Create performance comparison
                                 methods = ['similarity_combined', 'similarity_tfidf', 'similarity_bert']
                                 method_names = ['Combined', 'TF-IDF', 'BERT']
                                 
-                                # Group journals by impact factor ranges
-                                df['impact_range'] = pd.cut(df['impact_factor'].fillna(0), 
-                                                          bins=[0, 5, 10, 20, 50, 100], 
-                                                          labels=['0-5', '5-10', '10-20', '20-50', '50+'])
-                                
+                                # Calculate statistics for each method
                                 performance_matrix = []
-                                impact_ranges = ['0-5', '5-10', '10-20', '20-50', '50+']
+                                stats_labels = ['Mean', 'Median', 'Std Dev', 'Min', 'Max']
                                 
                                 for method in methods:
-                                    method_row = []
-                                    for impact_range in impact_ranges:
-                                        range_journals = df[df['impact_range'] == impact_range]
-                                        if not range_journals.empty:
-                                            avg_score = range_journals[method].mean()
-                                        else:
-                                            avg_score = 0
-                                        method_row.append(avg_score)
-                                    performance_matrix.append(method_row)
+                                    method_stats = [
+                                        df[method].mean(),
+                                        df[method].median(),
+                                        df[method].std(),
+                                        df[method].min(),
+                                        df[method].max()
+                                    ]
+                                    performance_matrix.append(method_stats)
                                 
                                 fig_performance = go.Figure(data=go.Heatmap(
                                     z=performance_matrix,
-                                    x=['Impact: ' + r for r in impact_ranges],
+                                    x=stats_labels,
                                     y=method_names,
                                     colorscale='Blues',
                                     text=[[f"{val:.3f}" for val in row] for row in performance_matrix],
@@ -786,17 +797,17 @@ def main():
                                     hoverongaps=False
                                 ))
                                 fig_performance.update_layout(
-                                    title="Average Similarity Scores by Impact Factor Range",
-                                    xaxis_title="Impact Factor Range",
+                                    title="Similarity Methods Statistical Comparison",
+                                    xaxis_title="Statistics",
                                     yaxis_title="Similarity Methods"
                                 )
                                 st.plotly_chart(fig_performance, use_container_width=True)
                                 
                                 st.markdown("""
                                 **Interpretation:**
-                                - Shows how different similarity methods perform across journal impact factor ranges
-                                - Helps identify if high-impact journals score differently than lower-impact ones
-                                - Useful for understanding method bias toward prestigious journals
+                                - Compares statistical properties of different similarity methods
+                                - Shows mean, median, standard deviation, min, and max values
+                                - Helps identify which method provides more consistent results
                                 """)
                             
                             # Additional scatter plot section
@@ -811,9 +822,9 @@ def main():
                                     df, 
                                     x='similarity_tfidf', 
                                     y='similarity_bert',
-                                    size='impact_factor',
+                                    size='similarity_combined',
                                     color='similarity_combined',
-                                    hover_data=['journal_name', 'publisher'],
+                                    hover_data=['journal_name'],
                                     title="TF-IDF vs BERT Similarity",
                                     labels={
                                         'similarity_tfidf': 'TF-IDF Score',
@@ -825,29 +836,38 @@ def main():
                                 st.plotly_chart(fig_scatter, use_container_width=True)
                             
                             with col2:
-                                # Bubble chart: Combined score vs Impact Factor
-                                fig_bubble = px.scatter(
+                                # Line chart: Combined score ranking
+                                fig_line = px.line(
                                     df,
-                                    x='impact_factor',
+                                    x=df.index + 1,
                                     y='similarity_combined', 
-                                    size='similarity_bert',
-                                    color='similarity_tfidf',
-                                    hover_data=['journal_name'],
-                                    title="Impact Factor vs Combined Similarity",
+                                    markers=True,
+                                    title="Combined Similarity by Rank",
                                     labels={
-                                        'impact_factor': 'Impact Factor',
+                                        'x': 'Rank',
                                         'similarity_combined': 'Combined Similarity Score'
-                                    },
-                                    color_continuous_scale='Plasma'
+                                    }
                                 )
-                                st.plotly_chart(fig_bubble, use_container_width=True)
+                                fig_line.update_traces(line_color='#667eea', marker=dict(size=8))
+                                st.plotly_chart(fig_line, use_container_width=True)
                 
                 # Ranking Comparison
                 if analysis_type in ["All", "Ranking Comparison"]:
+                    progress_text.text("🔄 Loading ranking comparisons...")
+                    progress_bar.progress(50)
+                    
                     st.subheader("Ranking Comparison Analysis")
                     
                     comparisons = get_ranking_comparisons(abstract, analysis_top_k)
-                    if "error" not in comparisons:
+                    progress_bar.progress(70)
+                    
+                    if "error" in comparisons:
+                        st.error(f"❌ Error loading ranking comparisons: {comparisons.get('error', 'Unknown error')}")
+                        st.info("💡 Make sure the API server is running and the abstract is at least 50 characters.")
+                    elif "comparisons" not in comparisons:
+                        st.error(f"❌ Unexpected response format. Keys: {list(comparisons.keys())}")
+                        st.json(comparisons)
+                    else:
                         comp_data = comparisons['comparisons']
                         
                         tab1, tab2, tab3, tab4 = st.tabs(["Side by Side", "Rank Changes", "Ranking Heatmap", "Method Analysis"])
@@ -1043,9 +1063,18 @@ def main():
                 
                 # Text Distribution Analysis
                 if analysis_type in ["All", "Text Distribution"]:
+                    progress_text.text("📝 Analyzing text distribution...")
+                    progress_bar.progress(90)
+                    
                     st.subheader("Text Distribution Analysis")
                     
                     text_analysis = analyze_text_distribution(abstract)
+                    progress_bar.progress(100)
+                    
+                    # Clear progress indicators
+                    progress_text.empty()
+                    progress_bar.empty()
+                    
                     if "error" not in text_analysis:
                         analysis_data = text_analysis['analysis']
                         

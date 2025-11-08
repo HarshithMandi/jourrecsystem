@@ -13,7 +13,7 @@ from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
 
 tfidf = TfidfVectorizer(max_features=20_000, stop_words="english")
-bert  = SentenceTransformer("all-MiniLM-L6-v2")  # light, CPU-friendly
+bert_general = SentenceTransformer("all-MiniLM-L6-v2")  # 384 dimensions, general purpose
 
 def main():
     db = SessionLocal()
@@ -39,10 +39,11 @@ def main():
         profile.tfidf_vector = json.dumps(vec_dense.tolist())
     db.commit()
 
-    # 4. BERT embeddings (batch)
+    # 4. BERT embeddings - general model (batch)
+    print("Encoding with general BERT model (all-MiniLM-L6-v2, 384 dimensions)...")
     batch = 512
     for start in tqdm.trange(0, len(scopes), batch):
-        embeds = bert.encode(scopes[start:start+batch]).tolist()
+        embeds = bert_general.encode(scopes[start:start+batch]).tolist()
         for offset, vec in enumerate(embeds):
             jid = ids[start+offset]
             profile = db.query(JournalProfile).filter_by(journal_id=jid).first()
@@ -50,6 +51,10 @@ def main():
                 profile.bert_vector = json.dumps(vec)
     db.commit()
     db.close()
+    
+    print(f"\n✓ Successfully rebuilt vectors for {len(ids)} journals")
+    print("  - TF-IDF vectors: 20,000 features")
+    print("  - General BERT vectors: 384 dimensions (all-MiniLM-L6-v2)")
 
 if __name__ == "__main__":
     main()
