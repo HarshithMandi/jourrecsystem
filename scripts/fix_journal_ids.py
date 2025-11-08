@@ -41,12 +41,13 @@ def search_openalex_id(journal_name):
         return None
 
 def fix_journal_ids():
-    """Fix all journals with HIGH_QUALITY_ prefix"""
+    """Fix all journals with HIGH_QUALITY_ or MANUAL_ prefix"""
     db = SessionLocal()
     
     # Get all journals with non-standard IDs
     journals = db.query(Journal).filter(
-        Journal.openalex_id.like('HIGH_QUALITY_%')
+        (Journal.openalex_id.like('HIGH_QUALITY_%')) | 
+        (Journal.openalex_id.like('MANUAL_%'))
     ).all()
     
     print(f"Found {len(journals)} journals to fix\n")
