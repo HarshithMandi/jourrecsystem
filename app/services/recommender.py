@@ -482,7 +482,7 @@ def analyze_text_distribution(abstract: str):
     # Get TF-IDF and BERT representations
     vec_tfidf_sparse = tfidf.transform([abstract])
     vec_tfidf = np.array(vec_tfidf_sparse.todense()).flatten()
-    vec_bert = bert_general.encode([abstract])  # Use general BERT
+    vec_bert = bert_general.encode([abstract])[0]  # Extract first element from array
     
     return {
         "word_frequency": dict(word_freq.most_common(20)),
