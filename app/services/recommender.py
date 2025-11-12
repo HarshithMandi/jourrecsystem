@@ -7,9 +7,24 @@ from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from functools import lru_cache
 import time
+import os
+from pathlib import Path
 
-# load models once
-bert_general = SentenceTransformer("all-MiniLM-L6-v2")  # General purpose, 384 dimensions
+# Define local model path
+MODEL_DIR = Path(__file__).parent.parent.parent / "models" / "all-MiniLM-L6-v2"
+
+# Load BERT model from local directory if it exists, otherwise download
+if MODEL_DIR.exists():
+    bert_general = SentenceTransformer(str(MODEL_DIR))
+    print(f"✓ Loaded BERT model from local directory: {MODEL_DIR}")
+else:
+    print("Downloading model (first time only)...")
+    bert_general = SentenceTransformer("all-MiniLM-L6-v2")
+    # Save model locally for future offline use
+    MODEL_DIR.parent.mkdir(parents=True, exist_ok=True)
+    bert_general.save(str(MODEL_DIR))
+    print(f"✓ Model saved to: {MODEL_DIR}")
+
 # Note: SciBERT removed for now - database vectors are 384-dim only
 tfidf = TfidfVectorizer(max_features=20_000, stop_words="english")
 

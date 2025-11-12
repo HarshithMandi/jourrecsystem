@@ -18,8 +18,21 @@ DATABASE_URL = "sqlite:///./data/journal_rec_crossdisciplinary.db"
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Define local model path
+MODEL_DIR = project_root / "models" / "all-MiniLM-L6-v2"
+
 print("Loading models...")
-bert_general = SentenceTransformer("all-MiniLM-L6-v2")  # 384 dimensions
+# Load BERT model from local directory if it exists, otherwise download
+if MODEL_DIR.exists():
+    bert_general = SentenceTransformer(str(MODEL_DIR))
+    print(f"✓ Loaded BERT model from local directory: {MODEL_DIR}")
+else:
+    print("⚠ Downloading model (first time only)...")
+    bert_general = SentenceTransformer("all-MiniLM-L6-v2")
+    # Save model locally for future offline use
+    MODEL_DIR.parent.mkdir(parents=True, exist_ok=True)
+    bert_general.save(str(MODEL_DIR))
+    print(f"✓ Model saved to: {MODEL_DIR}")
 print("✓ BERT model loaded (384 dimensions)")
 
 def build_vectors():

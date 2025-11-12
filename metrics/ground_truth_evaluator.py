@@ -23,10 +23,13 @@ from sqlalchemy.orm import Session
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
+from pathlib import Path
 
 from app.models.base import SessionLocal
 from app.models.entities import Journal, JournalProfile
 
+# Define local model path
+MODEL_DIR = Path(__file__).parent.parent / "models" / "all-MiniLM-L6-v2"
 
 class GroundTruthEvaluator:
     """
@@ -40,7 +43,18 @@ class GroundTruthEvaluator:
     
     def __init__(self, db: Session):
         self.db = db
-        self.bert_model = SentenceTransformer('all-MiniLM-L6-v2')
+        # Load BERT model from local directory if it exists, otherwise download
+        if MODEL_DIR.exists():
+            self.bert_model = SentenceTransformer(str(MODEL_DIR))
+            print(f"✓ Loaded BERT model from local directory: {MODEL_DIR}")
+        else:
+            print("⚠ Downloading model (first time only)...")
+            self.bert_model = SentenceTransformer('all-MiniLM-L6-v2')
+            # Save model locally for future offline use
+            MODEL_DIR.parent.mkdir(parents=True, exist_ok=True)
+            self.bert_model.save(str(MODEL_DIR))
+            print(f"✓ Model saved to: {MODEL_DIR}")
+        
         self.test_cases = []
         self.results = {
             'hybrid': {'top_10': [], 'top_20': []},
